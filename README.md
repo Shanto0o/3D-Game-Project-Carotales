@@ -11,6 +11,6 @@
 - **Déplacement** : Utilisez les touches directionnelles ou WASD ou les fleches pour déplacer le tank.
 - **Tir** : Appuyez sur la touche Espace pour tirer.
 
-Florant Belot
-Alexis Dubarry
-Shanti Noel
+## Groupe
+- **Nom** : Florant Belot, Alexis Dubarry, Shanti Noel
+
