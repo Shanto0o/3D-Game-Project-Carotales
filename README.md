@@ -1,6 +1,6 @@
 # 3D-Game-Tank
 
-## Fonctionnalités
+## Ajouts
 - **Skybox et brouillard** : Ajout d'une skybox immersive et d'un effet de brouillard pour améliorer l'atmosphère du jeu.
 - **Ambiance sonore** : Intégration d'une musique.
 - **Environnement** : Des planètes volantes ont été ajoutées.
