@@ -1,7 +1,7 @@
 # 3D-Game-Tank
 
 ## Ajouts
-- **Skybox et brouillard** : Ajout d'une skybox immersive et d'un effet de brouillard pour améliorer l'atmosphère du jeu.
+- **Skybox et brouillard** : Ajout d'une skybox et d'un effet de brouillard pour améliorer l'atmosphère du jeu.
 - **Ambiance sonore** : Intégration d'une musique.
 - **Environnement** : Des planètes volantes ont été ajoutées.
 - **Modèles 3D améliorés** : Remplacement des anciens modèles 3D des Dude par un modèle 3D de chat.
