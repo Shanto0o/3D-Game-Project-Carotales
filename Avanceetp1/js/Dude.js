@@ -22,7 +22,7 @@ export default class Dude {
         let alpha = Math.atan2(-dir.x, -dir.z);
         this.dudeMesh.rotation.y = alpha;
 
-        if (distance > 20) { // On réduit la distance de suivi
+        if (distance > 20) {
             this.dudeMesh.moveWithCollisions(dir.multiplyByFloats(this.speed, this.speed, this.speed));
         }
     }
