@@ -42,13 +42,12 @@ function createScene() {
     let scene = new BABYLON.Scene(engine);
     
 
-    // Configuration du brouillard
-    scene.fogMode = BABYLON.Scene.FOGMODE_EXP2; // Brouillard exponentiel pour un effet plus doux
-    scene.fogDensity = 0.0005; // Densité faible pour un effet subtil
-    scene.fogColor = new BABYLON.Color3(0.9, 0.9, 1); // Couleur légèrement bleutée pour l'ambiance rêve
+
+    scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+    scene.fogDensity = 0.0005;
+    scene.fogColor = new BABYLON.Color3(0.9, 0.9, 1);
     
 
-    // Création d'une skybox standard
     var skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:10000.0}, scene);
     var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
     skyboxMaterial.backFaceCulling = false;
@@ -58,7 +57,6 @@ function createScene() {
     skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
     skybox.material = skyboxMaterial;
     
-    // S'assurer que la skybox suit la caméra
     skybox.infiniteDistance = true;
 
     let ground = createGround(scene);
@@ -91,7 +89,6 @@ function createGround(scene) {
 }
 
 function createLights(scene) {
-    // Hemispheric light pour une ambiance plus douce
     let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
     light.intensity = 0.4;
 
@@ -102,7 +99,7 @@ function createFloatingIslands(scene) {
         let island = BABYLON.MeshBuilder.CreateSphere("island" + i, { diameter: 20 }, scene);
         island.position = new BABYLON.Vector3(
             Math.random() * 400 - 200,
-            Math.random() * 30 + 10, // Hauteur entre 10 et 50 au lieu de 20 à 120
+            Math.random() * 30 + 10,
             Math.random() * 400 - 200
         );
         
@@ -141,15 +138,14 @@ function createFollowCamera(scene, target) {
     let camera = new BABYLON.FollowCamera("tankFollowCamera", target.position, scene, target);
 
     camera.radius = 40;
-    camera.heightOffset = 8; // On baisse la hauteur (était 14)
+    camera.heightOffset = 8; 
     camera.rotationOffset = 180;
     camera.cameraAcceleration = 0.1;
     camera.maxCameraSpeed = 5;
 
-    // Pour regarder plus vers le ciel, on augmente beta
-    camera.beta = 0.8; // Augmenté (était 0.5)
+    camera.beta = 0.8; 
     camera.lowerBetaLimit = 0.6;
-    camera.upperBetaLimit = 2.0; // Augmenté pour permettre plus de flexibilité vers le haut
+    camera.upperBetaLimit = 2.0; 
 
     return camera;
 }
@@ -219,53 +215,53 @@ function createHeroDude(scene) {
         heroCat.scaling = new BABYLON.Vector3(10, 10, 10);
         heroCat.name = "heroCat";
 
-        // Vérifier s'il y a une animation
+       
         if (skeletons.length > 0) {
             scene.beginAnimation(skeletons[0], 0, 120, true, 1);
         }
 
-        // Ajouter un son au héros principal
+      
         let heroSound = new BABYLON.Sound("maxwellSound", "sounds/maxwell.mp3", scene, null, {
             loop: true,
             autoplay: true,
             spatialSound: true
         });
 
-        console.log("Son attaché au heroCat :", heroSound); // Debug - Vérifier l'attachement du son
+        console.log("Son attaché au heroCat :", heroSound);
 
-        // Attacher le son à Maxwell
+       
         heroSound.attachToMesh(heroCat);
 
-        // Ajouter une propriété 'sound' à l'objet heroCat pour y accéder facilement plus tard
+
         heroCat.sound = heroSound;
 
         console.log("Héros principal créé avec le son. Son :", heroCat.sound);
 
-        // Créer un objet "Dude" pour l'original Maxwell
+
         let hero = new Dude(heroCat, 0.1, scene);
 
-        // Ajouter l'original Maxwell à scene.dudes pour qu'il soit géré de la même manière que les clones
-        scene.dudes = [heroCat];  // Assurez-vous d'ajouter l'original à la liste des "dudes"
 
-        // Générer plusieurs clones de Maxwell
+        scene.dudes = [heroCat];
+
+
         for (let i = 0; i < 4; i++) {
             let clone = doClone(heroCat, skeletons, i);
             scene.beginAnimation(clone.skeleton, 0, 120, true, 1);
             let temp = new Dude(clone, 0.3);
 
-            // Ajouter un son à chaque clone
+
             let cloneSound = new BABYLON.Sound("cloneSound_" + i, "sounds/maxwell.mp3", scene, null, {
                 loop: true,
                 autoplay: true,
                 spatialSound: true
             });
 
-            console.log("Son attaché au clone " + i + " :", cloneSound); // Debug - Vérifier l'attachement du son du clone
+            console.log("Son attaché au clone " + i + " :", cloneSound);
 
-            // Attacher le son au clone
+
             cloneSound.attachToMesh(clone);
 
-            // Ajouter le son à l'objet clone pour pouvoir l'arrêter plus tard
+
             clone.sound = cloneSound;
 
             scene.dudes.push(clone);
@@ -387,32 +383,32 @@ function modifySettings() {
 function shootBubble(scene, tank) {
     let bubble = BABYLON.MeshBuilder.CreateSphere("bubble", {diameter: 2}, scene);
     bubble.position = tank.position.clone();
-    bubble.position.y += 2; // Légèrement au-dessus du tank
+    bubble.position.y += 2; 
     bubble.material = new BABYLON.StandardMaterial("bubbleMaterial", scene);
-    bubble.material.diffuseColor = new BABYLON.Color3(0.5, 0.7, 1); // Bleu
+    bubble.material.diffuseColor = new BABYLON.Color3(0.5, 0.7, 1);
 
     let bubbleSpeed = 2;
     let direction = tank.frontVector.clone();
 
-    // Animation de la bulle
+
     let bubbleInterval = scene.onBeforeRenderObservable.add(() => {
         bubble.position.addInPlace(direction.scale(bubbleSpeed));
 
-        // Vérifier la collision avec les Maxwell
+ 
         for (let i = 0; i < scene.dudes.length; i++) {
             let maxwell = scene.dudes[i];
 
-            // Vérification de la collision avec bounding box
+
             if (bubble.intersectsMesh(maxwell, false) || bubble.position.subtract(maxwell.position).length() < 5) {
                 console.log("Maxwell touché ! 💥");
 
-                // Supprimer le Maxwell
+
                 console.log("Suppression de Maxwell :", maxwell.name);
                 maxwell.dispose();
-                scene.dudes.splice(i, 1); // Retirer du tableau
-                i--; // Décrémenter pour ajuster l'indice après la suppression
+                scene.dudes.splice(i, 1);
+                i--;
 
-                // Supprimer la bulle et arrêter l'animation
+
                 bubble.dispose();
                 scene.onBeforeRenderObservable.remove(bubbleInterval);
                 return;
@@ -420,7 +416,7 @@ function shootBubble(scene, tank) {
         }
     });
 
-    // Supprimer la bulle après 3 secondes pour éviter qu'elle vole infiniment
+
     setTimeout(() => {
         bubble.dispose();
         scene.onBeforeRenderObservable.remove(bubbleInterval);
