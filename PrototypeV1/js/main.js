@@ -42,16 +42,26 @@ function createScene() {
 
     createLights(scene);
     let ground = createGround(scene);
-    let camera = createFollowCamera(scene,);
 
     player = new Player(scene);
     orbsManager = new OrbsManager(scene, 5);
+
+    let followCamera = createFollowCamera(scene, player.mesh);
 
     return scene;
 }
 
 function createGround(scene) {
-    const ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 10, height: 10 }, scene);
+    const groundOptions = { width: 1000, height: 1000, subdivisions: 20 , onReady : onGroundCreated };
+    const ground = BABYLON.MeshBuilder.CreateGroundFromHeightMap("gdhm", "images/hmap1.png", groundOptions, scene);
+
+    function onGroundCreated() {
+        const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
+        groundMaterial.diffuseTexture = new BABYLON.Texture("images/grass.jpg", scene);
+        ground.material = groundMaterial;
+        ground.checkCollisions = true;
+    }
+
     return ground;
 }
 
@@ -59,13 +69,16 @@ function createLights(scene) {
     new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 }
 
-function createFollowCamera(scene) {
-    let camera = new BABYLON.FollowCamera("playerFollowCamera", new BABYLON.Vector3(0, 3, -10), scene);
+function createFollowCamera(scene, target) {
+    let camera = new BABYLON.FollowCamera("followCamera", new BABYLON.Vector3(0, 10, -10), scene);
+    camera.radius = 20;
     camera.heightOffset = 10;
-    camera.radius = 10;
     camera.rotationOffset = 180;
     camera.cameraAcceleration = 0.1;
     camera.maxCameraSpeed = 5;
+    camera.lockedTarget = target;
+
+    scene.activeCamera = camera;
     return camera;
 }
 
