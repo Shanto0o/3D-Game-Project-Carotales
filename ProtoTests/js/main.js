@@ -23,17 +23,20 @@ function startGame() {
 
     engine.runRenderLoop(() => {
         player.move(inputStates, camera);
-        orbsManager.checkCollisions(player.mesh, () => {
+
+        scene.render();
+
+        orbsManager.checkCollisions(player, () => {
             score += 10;
             timeLeft += 3;
             document.getElementById("score").textContent = score;
             document.getElementById("timer").textContent = timeLeft;
         });
 
-        scene.render();
     });
 
     startTimer();
+
 }
 
 
@@ -47,6 +50,46 @@ function createScene() {
     player = new Player(scene);
     orbsManager = new OrbsManager(scene, 20);
 
+    scene.registerBeforeRender(function() {
+
+        // Crée un rayon partant du personnage vers le bas
+        const ray = new BABYLON.Ray(player.mesh.position, BABYLON.Vector3.Down());
+
+        // Utilise le raycast pour détecter le sol
+        const hit = scene.pickWithRay(ray);
+        let groundLevel;
+        // Si le rayon touche quelque chose (le sol par exemple)
+        if (hit.pickedMesh) {
+            // `hit.pickedPoint` est le point où le rayon a touché le sol
+            groundLevel = hit.pickedPoint.y;
+
+            // Tu peux maintenant utiliser cette valeur pour ajuster la position du personnage
+        }
+
+
+        // Si le personnage est au sol, il peut sauter
+        if (player.mesh.position.y <= groundLevel+1) {
+            player.mesh.position.y = groundLevel+1;  // Positionner le joueur sur le sol
+            player.velocityY = 0;  // Arrêter la chute
+        } else {
+            // Appliquer la gravité si le personnage est dans les airs
+            player.velocityY -= 0.1;
+        }
+    
+        // Déplacer le personnage verticalement en fonction de sa vitesse
+        player.mesh.position.y += player.velocityY;
+    
+        // Permettre au personnage de sauter si une touche est pressée
+        if (inputStates.space && player.mesh.position.y == groundLevel) {
+            player.velocityY = player.jumpPower;  // Initialiser la vitesse de saut
+        }
+    
+        // Limiter la position Y pour ne pas passer sous le sol
+        if (player.mesh.position.y < groundLevel) {
+            player.mesh.position.y = groundLevel;
+        }
+    });
+    
 
     return scene;
 }

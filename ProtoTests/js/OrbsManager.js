@@ -16,10 +16,10 @@ export default class OrbsManager {
     }
 
     checkCollisions(player, onCollision) {
-        if (!player.pickupRange) return; // Vérifie si pickupRange est bien défini
+        if (!player.pickupBox) return; // Vérifie si pickupRange est bien défini
     
         this.orbs.forEach((orb, index) => {
-            if (player.pickupRange.intersectsMesh(orb, false)) {
+            if (player.pickupBox.intersectsMesh(orb, false)) {
                 orb.dispose();
                 this.orbs.splice(index, 1);
                 onCollision();
