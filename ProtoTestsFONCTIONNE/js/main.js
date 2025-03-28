@@ -7,68 +7,170 @@ let scene;
 let inputStates = {};
 let player;
 let orbsManager;
+let ground;
 let score = 0;
-let timeLeft = 30; // Temps de départ en secondes
+let timeLeft = 200; // Temps en secondes par niveau
+let timerInterval;
+let gamePaused = false;
 
-// Lorsque l'utilisateur clique sur "Jouer", on masque le menu, lance le jeu
-// et on demande immédiatement le pointer lock pour forcer l'activation du contrôle de la caméra.
+// Système de niveaux
+let currentLevel = 1;
+const maxLevel = 10;
+let orbsTarget = currentLevel * 5; // Exemple : niveau 1 = 5 orbes, niveau 2 = 10, etc.
+let collectedOrbs = 0;
+
+// Boutique / monnaie
+let euros = 0; // Solde en €
+let jumpPurchased = false; // Le bonus saut ne s'achète qu'une seule fois
+
+
+
+// Lancement du jeu (niveau 1) lorsque l'utilisateur clique sur "Jouer"
 document.getElementById("playButton").addEventListener("click", () => {
+  console.log("Bouton Jouer cliqué");
   document.getElementById("menu").style.display = "none";
   startGame();
-  // Dès le lancement, demander le pointer lock sur le canvas (le clic sur le bouton est un geste utilisateur)
   canvas.requestPointerLock();
 });
 
 function startGame() {
   canvas = document.querySelector("#renderCanvas");
+  if (!canvas) {
+    console.error("Canvas introuvable !");
+    return;
+  }
   engine = new BABYLON.Engine(canvas, true);
   scene = createScene();
-
   modifySettings();
-
   let camera = createThirdPersonCamera(scene, player.mesh);
 
-  engine.runRenderLoop(() => {
-    player.move(inputStates, camera);
-    scene.render();
-
-    orbsManager.checkCollisions(player, () => {
-      score += 10;
-      timeLeft += 3;
-      document.getElementById("score").textContent = score;
-      document.getElementById("timer").textContent = timeLeft;
-    });
-  });
+  // Par défaut, le saut est désactivé tant qu'il n'est pas acheté
+  player.canJump = false;
 
   startTimer();
+
+  engine.runRenderLoop(() => {
+    if (gamePaused) {
+      scene.render();
+      return;
+    }
+
+    if (!player.canJump) {
+      inputStates.jump = false;
+    }
+
+    player.move(inputStates, camera);
+    //pour debug plus rapidement : A LAISSER FALSE
+    player.canJump = true;
+
+    // Vérification des collisions avec les orbes
+    orbsManager.checkCollisions(player, () => {
+      score += 10;
+      collectedOrbs++;
+      document.getElementById("score").textContent = score;
+      document.getElementById("timer").textContent = timeLeft;
+      console.log("Orbe récupérée : ", collectedOrbs, "/", orbsTarget);
+      
+      if (collectedOrbs >= orbsTarget) {
+        levelComplete();
+      }
+    });
+
+    scene.render();
+  });
 }
 
 function createScene() {
   let scene = new BABYLON.Scene(engine);
   scene.clearColor = new BABYLON.Color3(0.1, 0.1, 0.3);
-
   createLights(scene);
-  createGround(scene);
 
+  // Instanciez d'abord le player
   player = new Player(scene);
-  orbsManager = new OrbsManager(scene, 20);
-
+  
+  // Instanciez orbsManager sans orbes initiaux (ou avec 0 orbe)
+  orbsManager = new OrbsManager(scene);
+  
+  // Créez le ground, ce qui va appeler createOrbsAtPositions à la fin du chargement
+  ground = createGround(scene, currentLevel);
+  
   return scene;
 }
 
-function createGround(scene) {
-  const groundOptions = { width: 200, height: 200, subdivisions: 20, onReady: onGroundCreated };
-  const ground = BABYLON.MeshBuilder.CreateGroundFromHeightMap("gdhm", "images/hmap1.png", groundOptions, scene);
-
-  function onGroundCreated() {
-    const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
-    groundMaterial.diffuseTexture = new BABYLON.Texture("images/grass.jpg", scene);
-    ground.material = groundMaterial;
-    ground.checkCollisions = true;
+let importedMeshes = []; // Tableau pour stocker les meshes importés
+function createGround(scene, level) {
+  // Supprime les meshes importés précédemment
+  if (importedMeshes.length > 0) {
+      importedMeshes.forEach(mesh => mesh.dispose());
+      importedMeshes = []; // Réinitialise le tableau
   }
 
-  return ground;
+  if (level === 1) {
+      BABYLON.SceneLoader.ImportMesh("", "images/", "level2.glb", scene, function (meshes) {
+          // Stocke les meshes importés
+          importedMeshes = meshes;
+
+          // Créez un mesh parent pour regrouper tous les meshes importés
+          let groundParent = new BABYLON.Mesh("groundParent", scene);
+
+          // Affectez chaque mesh importé au parent et activez les collisions
+          meshes.forEach((mesh) => {
+              mesh.checkCollisions = true;
+          });
+
+          // Ajustez la position et l'échelle selon vos besoins
+          groundParent.position = new BABYLON.Vector3(0, 0, 0);
+          groundParent.scaling = new BABYLON.Vector3(1, 1, 1);
+
+          const spawnPositions = [
+              new BABYLON.Vector3(36, 2, -11),
+              new BABYLON.Vector3(-20, 3, 13),
+              new BABYLON.Vector3(-1, 3, 44),
+              new BABYLON.Vector3(38, 3, -5),
+              new BABYLON.Vector3(20, 3, -38),
+          ];
+
+          orbsManager.createOrbsAtPositions(spawnPositions);
+
+          console.log("Map t.glb chargée et ajustée pour le niveau 1");
+      });
+      return null;
+  } else if (level === 2) {
+      BABYLON.SceneLoader.ImportMesh("", "images/", "level2.glb", scene, function (meshes) {
+          // Stocke les meshes importés
+          importedMeshes = meshes;
+
+          // Créez un mesh parent pour regrouper tous les meshes importés
+          let groundParent = new BABYLON.Mesh("groundParent", scene);
+
+          // Affectez chaque mesh importé au parent et activez les collisions
+          meshes.forEach((mesh) => {
+              mesh.checkCollisions = true;
+          });
+
+          // Ajustez la position et l'échelle selon vos besoins
+          groundParent.position = new BABYLON.Vector3(0, 0, 0);
+          groundParent.scaling = new BABYLON.Vector3(1, 1, 1);
+
+          const spawnPositions = [
+              new BABYLON.Vector3(36, 2, -11),
+              new BABYLON.Vector3(-20, 3, 13),
+              new BABYLON.Vector3(-1, 3, 44),
+              new BABYLON.Vector3(38, 3, -5),
+              new BABYLON.Vector3(20, 3, -38),
+          ];
+
+          orbsManager.createOrbsAtPositions(spawnPositions);
+
+          console.log("Map t3.glb chargée et ajustée pour le niveau 2");
+      });
+      return null;
+  }
 }
+  
+  
+  
+  
 
 function createLights(scene) {
   new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
@@ -83,10 +185,7 @@ function createThirdPersonCamera(scene, target) {
     target.position,
     scene
   );
-
-  // Attacher le contrôle sans pointer lock au départ
   camera.attachControl(canvas, false);
-
   camera.lowerRadiusLimit = 5;
   camera.upperRadiusLimit = 20;
   camera.wheelPrecision = 0;
@@ -96,43 +195,83 @@ function createThirdPersonCamera(scene, target) {
   camera.inertia = 0;
   camera.angularSensibilityX = 2000;
   camera.angularSensibilityY = 4000;
-
-  // Limiter l'angle vertical de la caméra
   camera.upperBetaLimit = Math.PI / 2;
   camera.lowerBetaLimit = 0.8;
-
+  
   scene.activeCamera = camera;
   enablePointerLock(scene);
-
   return camera;
 }
 
 function modifySettings() {
   window.addEventListener("keydown", (event) => {
-    if (event.key === "z") inputStates.up = true;
-    if (event.key === "s") inputStates.down = true;
-    if (event.key === "q") inputStates.left = true;
-    if (event.key === "d") inputStates.right = true;
-    if (event.code === "Space") inputStates.jump = true; // Détection du saut avec la barre espace
+    console.log("KeyDown:", event.key);
+    switch(event.key) {
+      case "z":
+      case "ArrowUp":
+        inputStates.up = true;
+        break;
+      case "s":
+      case "ArrowDown":
+        inputStates.down = true;
+        break;
+      case "q":
+      case "ArrowLeft":
+        inputStates.left = true;
+        break;
+      case "d":
+      case "ArrowRight":
+        inputStates.right = true;
+        break;
+      case " ":
+        inputStates.jump = true;
+        break;
+    }
   });
-
+  
   window.addEventListener("keyup", (event) => {
-    if (event.key === "z") inputStates.up = false;
-    if (event.key === "s") inputStates.down = false;
-    if (event.key === "q") inputStates.left = false;
-    if (event.key === "d") inputStates.right = false;
-    if (event.code === "Space") inputStates.jump = false;
+    console.log("KeyUp:", event.key);
+    switch(event.key) {
+      case "z":
+      case "ArrowUp":
+        inputStates.up = false;
+        break;
+      case "s":
+      case "ArrowDown":
+        inputStates.down = false;
+        break;
+      case "q":
+      case "ArrowLeft":
+        inputStates.left = false;
+        break;
+      case "d":
+      case "ArrowRight":
+        inputStates.right = false;
+        break;
+      case " ":
+        inputStates.jump = false;
+        break;
+    }
   });
 
+  window.addEventListener("keydown", (event) => {
+    if (event.key.toLowerCase() === "m") {
+      console.log("Position du joueur :", player.mesh.position);
+    }
+  });
+  
   window.addEventListener("resize", () => engine.resize());
 }
 
 function startTimer() {
-  setInterval(() => {
+  console.log("Timer démarré avec", timeLeft, "secondes");
+  document.getElementById("timer").textContent = timeLeft;
+  timerInterval = setInterval(() => {
     timeLeft--;
     document.getElementById("timer").textContent = timeLeft;
-
+    console.log("Timer:", timeLeft);
     if (timeLeft <= 0) {
+      clearInterval(timerInterval);
       alert("Game Over! Score: " + score);
       engine.stopRenderLoop();
     }
@@ -140,13 +279,12 @@ function startTimer() {
 }
 
 function enablePointerLock(scene) {
-  // On s'assure que toute interaction sur le canvas demande le pointer lock.
   canvas.addEventListener("click", () => {
     if (!document.pointerLockElement) {
       canvas.requestPointerLock();
     }
   });
-
+  
   document.addEventListener("pointerlockchange", () => {
     if (document.pointerLockElement) {
       scene.activeCamera.attachControl(canvas, true);
@@ -154,9 +292,84 @@ function enablePointerLock(scene) {
       scene.activeCamera.detachControl(canvas);
     }
   });
-
-  // Empêcher le menu contextuel sur clic droit
+  
   canvas.addEventListener("contextmenu", (evt) => {
     evt.preventDefault();
   });
+}
+
+function levelComplete() {
+  clearInterval(timerInterval);
+  gamePaused = true;
+  euros += timeLeft;
+  document.getElementById("eurosDisplay").textContent = euros;
+  console.log("Niveau terminé, conversion en euros :", euros);
+  openShopInterface();
+}
+
+function openShopInterface() {
+  const shopInterface = document.getElementById("shopInterface");
+  shopInterface.style.display = "block";
+  document.getElementById("buyJump").onclick = buyJumpBonus;
+  document.getElementById("buyRange").onclick = buyRangeBonus;
+  document.getElementById("niveauSuivant").onclick = nextLevel;
+  console.log("affichage boutique :", euros);
+}
+
+function closeShopInterface() {
+  document.getElementById("shopInterface").style.display = "none";
+}
+
+function buyJumpBonus() {
+  if (!jumpPurchased && euros >= 20) {
+    euros -= 20;
+    jumpPurchased = true;
+    player.canJump = true;
+    document.getElementById("eurosDisplay").textContent = euros;
+    console.log("Bonus saut acheté");
+  } else {
+    console.log("Pas assez d'euros ou bonus déjà acheté");
+  }
+}
+
+function buyRangeBonus() {
+  if (euros >= 30) {
+    euros -= 30;
+    player.pickupBox.scaling = player.pickupBox.scaling.multiplyByFloats(1.1, 1.1, 1.1);
+    document.getElementById("eurosDisplay").textContent = euros;
+    console.log("Bonus portée acheté");
+  } else {
+    console.log("Pas assez d'euros pour augmenter la portée");
+  }
+}
+
+function nextLevel() {
+  closeShopInterface();
+  if (currentLevel < maxLevel) {
+      currentLevel++;
+      orbsTarget = currentLevel * 5;
+      collectedOrbs = 0;
+      timeLeft = 30;
+      document.getElementById("timer").textContent = timeLeft;
+
+      // Dispose les orbes du niveau précédent
+      orbsManager.orbs.forEach(orb => orb.dispose());
+
+      // Charge le nouveau niveau
+      ground = createGround(scene, currentLevel);
+
+      // Réinitialise le manager d'orbes pour le nouveau niveau
+      orbsManager = new OrbsManager(scene);
+
+      // Réinitialiser la position du joueur à son point de départ (exemple : (0,10,0))
+      player.mesh.position = new BABYLON.Vector3(0, 3, 0);
+
+      gamePaused = false;
+      startTimer();
+      canvas.requestPointerLock();
+      console.log("Niveau", currentLevel, "lancé");
+  } else {
+      alert("Félicitations, vous avez terminé les niveaux ! Score final : " + score);
+      engine.stopRenderLoop();
+  }
 }
