@@ -1,4 +1,4 @@
-import Player from "./Player.js"
+import Player from "./Player.js";
 import OrbsManager from "./OrbsManager.js";
 
 let canvas;
@@ -10,144 +10,153 @@ let orbsManager;
 let score = 0;
 let timeLeft = 30; // Temps de départ en secondes
 
-window.onload = startGame;
+// Lorsque l'utilisateur clique sur "Jouer", on masque le menu, lance le jeu
+// et on demande immédiatement le pointer lock pour forcer l'activation du contrôle de la caméra.
+document.getElementById("playButton").addEventListener("click", () => {
+  document.getElementById("menu").style.display = "none";
+  startGame();
+  // Dès le lancement, demander le pointer lock sur le canvas (le clic sur le bouton est un geste utilisateur)
+  canvas.requestPointerLock();
+});
 
 function startGame() {
-    canvas = document.querySelector("#renderCanvas");
-    engine = new BABYLON.Engine(canvas, true);
-    scene = createScene();
+  canvas = document.querySelector("#renderCanvas");
+  engine = new BABYLON.Engine(canvas, true);
+  scene = createScene();
 
-    modifySettings();
+  modifySettings();
 
-    let camera = createThirdPersonCamera(scene, player.mesh);
+  let camera = createThirdPersonCamera(scene, player.mesh);
 
-    engine.runRenderLoop(() => {
-        player.move(inputStates, camera);
+  engine.runRenderLoop(() => {
+    player.move(inputStates, camera);
+    scene.render();
 
-        scene.render();
-
-        orbsManager.checkCollisions(player, () => {
-            score += 10;
-            timeLeft += 3;
-            document.getElementById("score").textContent = score;
-            document.getElementById("timer").textContent = timeLeft;
-        });
-
+    orbsManager.checkCollisions(player, () => {
+      score += 10;
+      timeLeft += 3;
+      document.getElementById("score").textContent = score;
+      document.getElementById("timer").textContent = timeLeft;
     });
+  });
 
-    startTimer();
-
+  startTimer();
 }
 
-
 function createScene() {
-    let scene = new BABYLON.Scene(engine);
-    scene.clearColor = new BABYLON.Color3(0.1, 0.1, 0.3);
+  let scene = new BABYLON.Scene(engine);
+  scene.clearColor = new BABYLON.Color3(0.1, 0.1, 0.3);
 
-    createLights(scene);
-    let ground = createGround(scene);
+  createLights(scene);
+  createGround(scene);
 
-    player = new Player(scene);
-    orbsManager = new OrbsManager(scene, 20);
+  player = new Player(scene);
+  orbsManager = new OrbsManager(scene, 20);
 
-    return scene;
+  return scene;
 }
 
 function createGround(scene) {
-    const groundOptions = { width: 200, height: 200, subdivisions: 20 , onReady : onGroundCreated };
-    const ground = BABYLON.MeshBuilder.CreateGroundFromHeightMap("gdhm", "images/hmap1.png", groundOptions, scene);
+  const groundOptions = { width: 200, height: 200, subdivisions: 20, onReady: onGroundCreated };
+  const ground = BABYLON.MeshBuilder.CreateGroundFromHeightMap("gdhm", "images/hmap1.png", groundOptions, scene);
 
-    function onGroundCreated() {
-        const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
-        groundMaterial.diffuseTexture = new BABYLON.Texture("images/grass.jpg", scene);
-        ground.material = groundMaterial;
-        ground.checkCollisions = true;
-    }
+  function onGroundCreated() {
+    const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
+    groundMaterial.diffuseTexture = new BABYLON.Texture("images/grass.jpg", scene);
+    ground.material = groundMaterial;
+    ground.checkCollisions = true;
+  }
 
-    return ground;
+  return ground;
 }
 
 function createLights(scene) {
-    new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+  new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 }
 
 function createThirdPersonCamera(scene, target) {
-    let camera = new BABYLON.ArcRotateCamera(
-        "ThirdPersonCamera",
-        BABYLON.Tools.ToRadians(0), BABYLON.Tools.ToRadians(45),
-        10, target.position, scene
-    );
+  let camera = new BABYLON.ArcRotateCamera(
+    "ThirdPersonCamera",
+    BABYLON.Tools.ToRadians(0),
+    BABYLON.Tools.ToRadians(45),
+    10,
+    target.position,
+    scene
+  );
 
-    camera.attachControl(canvas, false); // Désactive le contrôle initial
-    camera.lowerRadiusLimit = 5;
-    camera.upperRadiusLimit = 20;
-    camera.wheelPrecision = 0;
-    camera.panningSensibility = -10;
-    camera.checkCollisions = false;
-    camera.lockedTarget = target;
-    camera.inertia = 0;
-    camera.angularSensibilityX = 2000; // Sensibilité horizontale (augmenter pour réduire la vitesse)
-    camera.angularSensibilityY = 4000; // Sensibilité verticale (augmenter pour réduire la vitesse)
+  // Attacher le contrôle sans pointer lock au départ
+  camera.attachControl(canvas, false);
 
-    // Definir max camera angle pour le y 
-    camera.upperBetaLimit = Math.PI / 2;
-    camera.lowerBetaLimit = 0.8;
+  camera.lowerRadiusLimit = 5;
+  camera.upperRadiusLimit = 20;
+  camera.wheelPrecision = 0;
+  camera.panningSensibility = -10;
+  camera.checkCollisions = false;
+  camera.lockedTarget = target;
+  camera.inertia = 0;
+  camera.angularSensibilityX = 2000;
+  camera.angularSensibilityY = 4000;
 
+  // Limiter l'angle vertical de la caméra
+  camera.upperBetaLimit = Math.PI / 2;
+  camera.lowerBetaLimit = 0.8;
 
-    scene.activeCamera = camera;
-    enablePointerLock(scene); // Active le mode "Pointer Lock"
+  scene.activeCamera = camera;
+  enablePointerLock(scene);
 
-    return camera;
+  return camera;
 }
 
-
-
-
 function modifySettings() {
-    window.addEventListener("keydown", (event) => {
-        if (event.key === "z") inputStates.up = true;
-        if (event.key === "s") inputStates.down = true;
-        if (event.key === "q") inputStates.left = true;
-        if (event.key === "d") inputStates.right = true;
-    });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "z") inputStates.up = true;
+    if (event.key === "s") inputStates.down = true;
+    if (event.key === "q") inputStates.left = true;
+    if (event.key === "d") inputStates.right = true;
+    if (event.code === "Space") inputStates.jump = true; // Détection du saut avec la barre espace
+  });
 
-    window.addEventListener("keyup", (event) => {
-        if (event.key === "z") inputStates.up = false;
-        if (event.key === "s") inputStates.down = false;
-        if (event.key === "q") inputStates.left = false;
-        if (event.key === "d") inputStates.right = false;
-    });
+  window.addEventListener("keyup", (event) => {
+    if (event.key === "z") inputStates.up = false;
+    if (event.key === "s") inputStates.down = false;
+    if (event.key === "q") inputStates.left = false;
+    if (event.key === "d") inputStates.right = false;
+    if (event.code === "Space") inputStates.jump = false;
+  });
 
-    window.addEventListener("resize", () => engine.resize());
+  window.addEventListener("resize", () => engine.resize());
 }
 
 function startTimer() {
-    setInterval(() => {
-        timeLeft--;
-        document.getElementById("timer").textContent = timeLeft;
+  setInterval(() => {
+    timeLeft--;
+    document.getElementById("timer").textContent = timeLeft;
 
-        if (timeLeft <= 0) {
-            alert("Game Over! Score: " + score);
-            engine.stopRenderLoop();
-        }
-    }, 1000);
+    if (timeLeft <= 0) {
+      alert("Game Over! Score: " + score);
+      engine.stopRenderLoop();
+    }
+  }, 1000);
 }
-
 
 function enablePointerLock(scene) {
-    scene.onPointerDown = () => {
-        if (!document.pointerLockElement) {
-            canvas.requestPointerLock(); // Capture le pointeur
-        }
-    };
+  // On s'assure que toute interaction sur le canvas demande le pointer lock.
+  canvas.addEventListener("click", () => {
+    if (!document.pointerLockElement) {
+      canvas.requestPointerLock();
+    }
+  });
 
-    document.addEventListener("pointerlockchange", () => {
-        if (document.pointerLockElement) {
-            scene.activeCamera.attachControl(canvas, true); // Active la caméra
-        } else {
-            scene.activeCamera.detachControl(canvas); // Désactive si on quitte
-        }
-    });
+  document.addEventListener("pointerlockchange", () => {
+    if (document.pointerLockElement) {
+      scene.activeCamera.attachControl(canvas, true);
+    } else {
+      scene.activeCamera.detachControl(canvas);
+    }
+  });
+
+  // Empêcher le menu contextuel sur clic droit
+  canvas.addEventListener("contextmenu", (evt) => {
+    evt.preventDefault();
+  });
 }
-
-
