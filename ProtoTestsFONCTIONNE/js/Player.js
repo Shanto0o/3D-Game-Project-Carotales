@@ -5,13 +5,38 @@ export default class Player {
         this.mesh.position.y = 1;
         this.speed = 0.3;
 
-    
-        // Création du Bounding Box pour la portée de récupération
-        this.pickupBox = BABYLON.MeshBuilder.CreateBox("pickupBox", { size: 5 }, scene); // Box avec taille 5
-        this.pickupBox.isVisible = false; // Box invisible
+        // Propriétés pour le saut
+        this.jumpSpeed = 0.3;    // Force du saut
+        this.gravity = 0.01;     // Gravité appliquée
+        this.velocityY = 0;      // Vitesse verticale actuelle
+        this.isJumping = false;  // Indique si le joueur est en train de sauter
 
-        // Faire en sorte que pickupBox suive le joueur
+        // Création du Bounding Box pour la portée de récupération
+        this.pickupBox = BABYLON.MeshBuilder.CreateBox("pickupBox", { size: 5 }, scene);
+        this.pickupBox.isVisible = false;
         this.pickupBox.parent = this.mesh;
+    }
+
+    jump() {
+        if (!this.isJumping) {
+            this.velocityY = this.jumpSpeed;
+            this.isJumping = true;
+        }
+    }
+
+    update() {
+        // Mise à jour de la position verticale
+        if (this.isJumping) {
+            this.mesh.position.y += this.velocityY;
+            this.velocityY -= this.gravity;
+
+            // Si le joueur touche le sol, réinitialiser la position et les variables de saut
+            if (this.mesh.position.y <= 1) {
+                this.mesh.position.y = 1;
+                this.isJumping = false;
+                this.velocityY = 0;
+            }
+        }
     }
 
     move(inputStates, camera) {
@@ -35,6 +60,15 @@ export default class Player {
         if (inputStates.left) movement.addInPlace(right.scale(-speed));
         if (inputStates.right) movement.addInPlace(right.scale(speed));
 
-        this.mesh.moveWithCollisions(movement);
+        // Détection du saut via inputStates.jump
+        if (inputStates.jump) {
+            this.jump();
+        }
+
+        // Déplacement horizontal avec collisions (le mouvement vertical est géré séparément)
+        this.mesh.moveWithCollisions(new BABYLON.Vector3(movement.x, 0, movement.z));
+
+        // Mise à jour verticale (saut et gravité)
+        this.update();
     }
 }
