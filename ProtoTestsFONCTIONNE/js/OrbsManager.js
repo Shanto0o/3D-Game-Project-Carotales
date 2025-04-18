@@ -1,18 +1,19 @@
 export default class OrbsManager {
     constructor(scene) {
         this.scene = scene;
-        this.orbs = [];    }
+        this.orbs = [];
+    }
 
     createOrbsAtPositions(positions) {
         positions.forEach(pos => {
-          let orb = BABYLON.MeshBuilder.CreateSphere("orb", { diameter: 1 }, this.scene);
-          // On peut fixer une hauteur par défaut, ici 1, ou utiliser pos.y si défini
-          orb.position.set(pos.x, pos.y !== undefined ? pos.y : 1, pos.z);
-          orb.material = new BABYLON.StandardMaterial("orbMat", this.scene);
-          orb.material.emissiveColor = new BABYLON.Color3(1, 1, 0);
-          this.orbs.push(orb);
+            BABYLON.SceneLoader.ImportMesh("", "./images/", "carotte.glb", this.scene, (meshes) => {
+                let orb = meshes[0]; // On suppose que le premier mesh est la carotte
+                orb.position.set(pos.x, pos.y !== undefined ? pos.y : 1, pos.z);
+                orb.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5); // Ajustez l'échelle si nécessaire
+                this.orbs.push(orb);
+            });
         });
-      }
+    }
 
     // Utilisation d'un test de distance plutôt que de intersectsMesh pour la détection de collision
     checkCollisions(player, onCollision) {
