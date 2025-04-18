@@ -1,5 +1,6 @@
 import Player from "./Player.js";
 import OrbsManager from "./OrbsManager.js";
+import EnemiesManager from "./EnemiesManager.js";
 
 let canvas;
 let engine;
@@ -7,8 +8,10 @@ let scene;
 let inputStates = {};
 let player;
 let orbsManager;
+let enemiesManager;
 let ground;
-let score = 0;
+let finishMesh = null;
+
 let timeLeft = 200; // Temps en secondes par niveau
 let timerInterval;
 let gamePaused = false;
@@ -17,13 +20,13 @@ let gamePaused = false;
 let currentLevel = 1;
 const maxLevel = 10;
 let orbsTarget = currentLevel * 5; // Exemple : niveau 1 = 5 orbes, niveau 2 = 10, etc.
-let collectedOrbs = 0;
+let collectedOrbs = 0; // Compteur d'orbes collectées
 
 // Boutique / monnaie
 let euros = 0; // Solde en €
-let jumpPurchased = false; // Le bonus saut ne s'achète qu'une seule fois
 
-
+// Distance pour déclencher la fin de niveau
+const FINISH_THRESHOLD = 3;
 
 // Lancement du jeu (niveau 1) lorsque l'utilisateur clique sur "Jouer"
 document.getElementById("playButton").addEventListener("click", () => {
@@ -60,22 +63,27 @@ function startGame() {
     }
 
     player.move(inputStates, camera);
-    //pour debug plus rapidement : A LAISSER FALSE
     player.canJump = true;
 
     // Vérification des collisions avec les orbes
     orbsManager.checkCollisions(player, () => {
-      score += 10;
-      collectedOrbs++;
-      document.getElementById("score").textContent = score;
+      euros += 5; // 5 euro par orbe collectée
       document.getElementById("timer").textContent = timeLeft;
-      console.log("Orbe récupérée : ", collectedOrbs, "/", orbsTarget);
-      
-      if (collectedOrbs >= orbsTarget) {
-        levelComplete();
-      }
+
     });
 
+    // mise à jour des ennemis
+    if (currentLevel >= 2) {
+      enemiesManager.updateAll(player);
+    }
+
+    // Arrivée au point de fin → terminer le niveau
+    if (finishMesh) {
+      const dist = BABYLON.Vector3.Distance(player.mesh.position, finishMesh.position);
+      if (dist < FINISH_THRESHOLD) {
+        levelComplete();
+      }
+    }
     scene.render();
   });
 }
@@ -88,8 +96,12 @@ function createScene() {
   // Instanciez d'abord le player
   player = new Player(scene);
   
+
+  
   // Instanciez orbsManager sans orbes initiaux (ou avec 0 orbe)
   orbsManager = new OrbsManager(scene);
+
+  enemiesManager = new EnemiesManager(scene);
   
   // Créez le ground, ce qui va appeler createOrbsAtPositions à la fin du chargement
   ground = createGround(scene, currentLevel);
@@ -133,6 +145,16 @@ function createGround(scene, level) {
           orbsManager.createOrbsAtPositions(spawnPositions);
 
           console.log("Map t.glb chargée et ajustée pour le niveau 1");
+
+          // Création du point d'arrivée
+          finishMesh = BABYLON.MeshBuilder.CreateBox("finish", { size: 2 }, scene);
+          finishMesh.position.set(6.6, 3.7, -52);  // <-- coordonnées fixes
+          const mat = new BABYLON.StandardMaterial("finishMat", scene);
+          mat.diffuseColor  = new BABYLON.Color3(0, 1, 0);
+          mat.emissiveColor = new BABYLON.Color3(0, 1, 0);
+          mat.alpha         = 0.5;
+          finishMesh.material = mat;
+          console.log("Point d'arrivée positionné en (120, 10, 120)");
       });
       return null;
   } else if (level === 2) {
@@ -163,7 +185,34 @@ function createGround(scene, level) {
           orbsManager.createOrbsAtPositions(spawnPositions);
 
           console.log("Map t3.glb chargée et ajustée pour le niveau 2");
-      });
+
+          finishMesh.position.set(59.58, 19.15, -129);  // <-- coordonnées fixes
+
+
+          // GESTION DES ENNEMIS
+
+          const paths = [
+            [
+              new BABYLON.Vector3(9.45, 1, 34.24 ),
+              new BABYLON.Vector3(24.48, 1, 1.55),
+          
+
+            ],
+            [
+              new BABYLON.Vector3(9.45, 1, -29.9 ),
+              new BABYLON.Vector3(-35.5, 1, -9.66),
+            ]
+          ];
+          
+          // on donne aussi speed et range à chaque ennemi si besoin
+          const configs = paths.map(p => ({
+            path: p,
+            speed: 0.12,
+            range: 15
+          }));
+          enemiesManager.createEnemies(configs);
+          
+          });
       return null;
   }
 }
@@ -272,7 +321,7 @@ function startTimer() {
     console.log("Timer:", timeLeft);
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
-      alert("Game Over! Score: " + score);
+      alert("Game Over! ");
       engine.stopRenderLoop();
     }
   }, 1000);
@@ -301,7 +350,6 @@ function enablePointerLock(scene) {
 function levelComplete() {
   clearInterval(timerInterval);
   gamePaused = true;
-  euros += timeLeft;
   document.getElementById("eurosDisplay").textContent = euros;
   console.log("Niveau terminé, conversion en euros :", euros);
   openShopInterface();
@@ -310,7 +358,6 @@ function levelComplete() {
 function openShopInterface() {
   const shopInterface = document.getElementById("shopInterface");
   shopInterface.style.display = "block";
-  document.getElementById("buyJump").onclick = buyJumpBonus;
   document.getElementById("buyRange").onclick = buyRangeBonus;
   document.getElementById("niveauSuivant").onclick = nextLevel;
   console.log("affichage boutique :", euros);
@@ -320,17 +367,6 @@ function closeShopInterface() {
   document.getElementById("shopInterface").style.display = "none";
 }
 
-function buyJumpBonus() {
-  if (!jumpPurchased && euros >= 20) {
-    euros -= 20;
-    jumpPurchased = true;
-    player.canJump = true;
-    document.getElementById("eurosDisplay").textContent = euros;
-    console.log("Bonus saut acheté");
-  } else {
-    console.log("Pas assez d'euros ou bonus déjà acheté");
-  }
-}
 
 function buyRangeBonus() {
   if (euros >= 30) {
@@ -369,7 +405,7 @@ function nextLevel() {
       canvas.requestPointerLock();
       console.log("Niveau", currentLevel, "lancé");
   } else {
-      alert("Félicitations, vous avez terminé les niveaux ! Score final : " + score);
+      alert("Félicitations, vous avez terminé les niveaux" );
       engine.stopRenderLoop();
   }
 }
