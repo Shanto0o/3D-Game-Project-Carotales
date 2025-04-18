@@ -11,6 +11,9 @@
         overflow: hidden;
         padding: 0;
       }
+      body{background: url('./images/carotales.png') no-repeat center center fixed;
+      background-color: #000;     
+      background-size: contain;}
       #renderCanvas {
         width: 100%;
         height: 100%;
@@ -18,14 +21,13 @@
       }
       #menu {
         position: absolute;
-        top: 10px;
-        left: 10px;
+        left: 68%;       /* 3/4 de la largeur */
+        top: 35%;        /* 1/2 de la hauteur */
         z-index: 100;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 10px;
-        border-radius: 5px;
-        color: white;
-      }
+        /* plus de fond */
+        background: transparent;
+        padding: 0;          /* optionnel : enlève le padding autour du bouton */
+      } 
       #shopInterface {
         position: absolute;
         top: 50%;
@@ -51,6 +53,16 @@
       #timerDisplay {
         top: 60px;
       }
+      #playButton {
+      width: 280px;
+      height: auto;
+      cursor: pointer;
+      transition: transform .15s ease;
+    }
+    #playButton:hover { transform: scale(1.05); }
+    #playButton:active {
+      transform: scale(0.95);   /* petit effet de clic */
+    }      
     </style>
     <!-- Utilisez la version max de Babylon.js (5.x) -->
     <script src="https://cdn.babylonjs.com/babylon.max.js"></script>
@@ -62,15 +74,13 @@
   <body>
     <canvas id="renderCanvas"></canvas>
     <div id="menu">
-      <button id="playButton">Play</button>
+      <img id="playButton" src="images/play.png" alt="Play DreamLand">
     </div>
     <div id="shopInterface">
-      <button id="buyJump">Acheter saut (20€)</button>
       <button id="buyRange">Acheter portée (30€)</button>
       <button id="niveauSuivant">Niveau suivant</button>
       <div>Euros: <span id="eurosDisplay">0</span></div>
     </div>
-    <div id="scoreDisplay">Score: <span id="score">0</span></div>
     <div id="timerDisplay">Time Left: <span id="timer">30</span></div>
     <!-- Chargement du script principal en tant que module -->
     <script type="module" src="js/main.js"></script>
