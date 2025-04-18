@@ -1,6 +1,7 @@
 import Player from "./Player.js";
 import OrbsManager from "./OrbsManager.js";
 import EnemiesManager from "./EnemiesManager.js";
+import MiniGameManager from "./MiniGameManager.js";
 
 let canvas;
 let engine;
@@ -22,16 +23,49 @@ const maxLevel = 10;
 let orbsTarget = currentLevel * 5; // Exemple : niveau 1 = 5 orbes, niveau 2 = 10, etc.
 let collectedOrbs = 0; // Compteur d'orbes collectées
 
+
+let chestOpened = false;   // pour qu’on ne puisse l’ouvrir qu’une fois
+
+
 // Boutique / monnaie
 let euros = 0; // Solde en €
 
+let miniGameManager;
+
 // Distance pour déclencher la fin de niveau
 const FINISH_THRESHOLD = 3;
+
+
+let chestMesh = null;
+let gamblingTableMesh = null;
+let miniGameZone = null;
+let miniGameTriggerZone = null;
+
+
+
+const promptDiv = document.getElementById("interactPrompt");
+if (!promptDiv) {
+  console.error("interactPrompt introuvable dans index.html !");
+}
+
+function updateEurosUI() {
+  const span = document.getElementById("eurosAmount");
+  if (span) span.textContent = euros;
+}
+
+
+// En haut de main.js, après avoir chargé le DOM :
+const timerDiv = document.getElementById("timerDisplay");
+const eurosDiv = document.getElementById("eurosDisplay");
+
+
 
 // Lancement du jeu (niveau 1) lorsque l'utilisateur clique sur "Jouer"
 document.getElementById("playButton").addEventListener("click", () => {
   console.log("Bouton Jouer cliqué");
   document.getElementById("menu").style.display = "none";
+  timerDiv.style.display = "block";
+  eurosDiv.style.display = "block";
   startGame();
   canvas.requestPointerLock();
 });
@@ -68,6 +102,7 @@ function startGame() {
     // Vérification des collisions avec les orbes
     orbsManager.checkCollisions(player, () => {
       euros += 5; // 5 euro par orbe collectée
+      updateEurosUI();
       document.getElementById("timer").textContent = timeLeft;
 
     });
@@ -84,6 +119,30 @@ function startGame() {
         levelComplete();
       }
     }
+
+    updateEurosUI();
+
+    if (chestMesh && !chestOpened) {
+      // distance joueur ↔ coffre
+      const d = BABYLON.Vector3.Distance(player.mesh.position, chestMesh.position);
+      if (d < 3) {  // seuil d’interaction
+        promptDiv.style.display = "block";
+        // si on appuie sur E
+        if (inputStates.interact) {
+          euros += 15;                // on ajoute 15 €
+          updateEurosUI();
+          chestOpened = true;         // pour ne plus pouvoir rouvrir
+          chestMesh.dispose();        // on fait disparaître le coffre
+          promptDiv.style.display = "none";
+          // met à jour l'affichage du solde
+        }
+      } else {
+        promptDiv.style.display = "none";
+      }
+    }
+
+
+
     scene.render();
   });
 }
@@ -102,6 +161,15 @@ function createScene() {
   orbsManager = new OrbsManager(scene);
 
   enemiesManager = new EnemiesManager(scene);
+
+  miniGameManager = new MiniGameManager(
+    () => euros,
+    (newVal) => {
+      euros = newVal;
+      updateEurosUI();
+    }
+  );
+
   
   // Créez le ground, ce qui va appeler createOrbsAtPositions à la fin du chargement
   ground = createGround(scene, currentLevel);
@@ -118,7 +186,7 @@ function createGround(scene, level) {
   }
 
   if (level === 1) {
-      BABYLON.SceneLoader.ImportMesh("", "images/", "level2.glb", scene, function (meshes) {
+      BABYLON.SceneLoader.ImportMesh("", "images/", "niveau1.glb", scene, function (meshes) {
           // Stocke les meshes importés
           importedMeshes = meshes;
 
@@ -155,6 +223,74 @@ function createGround(scene, level) {
           mat.alpha         = 0.5;
           finishMesh.material = mat;
           console.log("Point d'arrivée positionné en (120, 10, 120)");
+
+
+
+
+          // GESTION COFFRE LOOT
+          BABYLON.SceneLoader.ImportMesh("", "images/", "chest.glb", scene, (meshes) => {
+            chestMesh = meshes[0];               // ou un parent si plusieurs
+            chestMesh.position = new BABYLON.Vector3(-31, 0, -55); // ajustez la position
+            chestMesh.scaling  = new BABYLON.Vector3(4, 4, 4);   // ajustez l’échelle
+            // Si vous voulez qu’il ne bloque pas le joueur :
+            chestMesh.checkCollisions = false;
+          });
+
+
+          // GESTION DES MINIJEUX 
+          // Charger le modèle gamblingtable.glb
+          BABYLON.SceneLoader.ImportMesh("", "images/", "gamblingtable.glb", scene, (meshes) => {
+            gamblingTableMesh = meshes[0]; // On suppose que le premier mesh est la table
+            gamblingTableMesh.position = new BABYLON.Vector3(-50, 1, -79); // Ajustez les coordonnées
+            gamblingTableMesh.scaling = new BABYLON.Vector3(4, 4, 4); // Ajustez l'échelle si nécessaire
+            gamblingTableMesh.isVisible = true;
+        
+            // Activer les collisions pour la table
+            gamblingTableMesh.checkCollisions = true;
+        
+            //zone de la table
+            miniGameTriggerZone = BABYLON.MeshBuilder.CreateBox("miniZone", { size: 3 }, scene);
+            miniGameTriggerZone.position = gamblingTableMesh.position.clone(); // Placez le cube au même endroit que la table
+            miniGameTriggerZone.isVisible = false; // Rendre le cube invisible (ou semi-transparent si nécessaire)
+            miniGameTriggerZone.checkCollisions = true; // Activer les collisions pour la zone
+
+            // Créer une zone en cube autour de la table pour gérer les interactions
+            miniGameZone = BABYLON.MeshBuilder.CreateBox("miniZone", { size: 6 }, scene);
+            miniGameZone.position = gamblingTableMesh.position.clone(); // Placez le cube au même endroit que la table
+            miniGameZone.isVisible = true; // Rendre le cube invisible (ou semi-transparent si nécessaire)
+        
+            // Si vous voulez rendre le cube semi-transparent pour le débogage :
+            const matZone = new BABYLON.StandardMaterial("zoneMat", scene);
+            matZone.diffuseColor = new BABYLON.Color3(1, 1, 0); // Jaune
+            matZone.alpha = 0.3; // 30% d’opacité
+            miniGameZone.material = matZone;
+        
+            // Ajouter un gestionnaire d'actions pour la zone
+            miniGameZone.actionManager = new BABYLON.ActionManager(scene);
+        
+            // Quand le joueur entre dans la zone, on affiche l'UI
+            miniGameZone.actionManager.registerAction(
+                new BABYLON.ExecuteCodeAction(
+                    { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: { mesh: player.mesh } },
+                    () => {
+                        document.exitPointerLock();
+                        miniGameManager.showInterface();
+                    }
+                )
+            );
+        
+            // Quand il sort, on cache l'UI
+            miniGameZone.actionManager.registerAction(
+                new BABYLON.ExecuteCodeAction(
+                    { trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: { mesh: player.mesh } },
+                    () => {
+                        miniGameManager.hideInterface();
+                        canvas.requestPointerLock();
+                    }
+                )
+            );
+        });
+          
       });
       return null;
   } else if (level === 2) {
@@ -219,7 +355,28 @@ function createGround(scene, level) {
   
   
   
-  
+function clearLevelObjects() {
+  if (chestMesh) {
+    chestMesh.dispose();
+    chestMesh = null;
+    chestOpened = false;
+  }
+
+  if (gamblingTableMesh) {
+    gamblingTableMesh.dispose();
+    gamblingTableMesh = null;
+  }
+
+  if (miniGameZone) {
+    miniGameZone.dispose();
+    miniGameZone = null;
+  }
+  if (miniGameTriggerZone) {
+    miniGameTriggerZone.dispose();
+    miniGameTriggerZone = null;
+  }
+
+}
 
 function createLights(scene) {
   new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
@@ -275,6 +432,9 @@ function modifySettings() {
       case " ":
         inputStates.jump = true;
         break;
+      case "e":
+        inputStates.interact = true;
+        break;
     }
   });
   
@@ -300,6 +460,9 @@ function modifySettings() {
       case " ":
         inputStates.jump = false;
         break;
+        case "e":
+          inputStates.interact = false;
+          break;
     }
   });
 
@@ -358,12 +521,14 @@ function levelComplete() {
 function openShopInterface() {
   const shopInterface = document.getElementById("shopInterface");
   shopInterface.style.display = "block";
+  document.exitPointerLock();
   document.getElementById("buyRange").onclick = buyRangeBonus;
   document.getElementById("niveauSuivant").onclick = nextLevel;
   console.log("affichage boutique :", euros);
 }
 
 function closeShopInterface() {
+  canvas.requestPointerLock();
   document.getElementById("shopInterface").style.display = "none";
 }
 
@@ -372,7 +537,7 @@ function buyRangeBonus() {
   if (euros >= 30) {
     euros -= 30;
     player.pickupBox.scaling = player.pickupBox.scaling.multiplyByFloats(1.1, 1.1, 1.1);
-    document.getElementById("eurosDisplay").textContent = euros;
+    updateEurosUI();
     console.log("Bonus portée acheté");
   } else {
     console.log("Pas assez d'euros pour augmenter la portée");
@@ -387,6 +552,10 @@ function nextLevel() {
       collectedOrbs = 0;
       timeLeft = 30;
       document.getElementById("timer").textContent = timeLeft;
+
+      // Dispose les objets spécifiques du niveau précédent (coffre, table...)
+      clearLevelObjects();
+
 
       // Dispose les orbes du niveau précédent
       orbsManager.orbs.forEach(orb => orb.dispose());
