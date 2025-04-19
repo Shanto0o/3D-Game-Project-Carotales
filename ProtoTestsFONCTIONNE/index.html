@@ -29,16 +29,125 @@
         padding: 0;          /* optionnel : enlève le padding autour du bouton */
       } 
       #shopInterface {
+      position: absolute;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;      /* caché au départ */
+      /* plus besoin de display: flex ici */
+      flex-direction: row;
+    }
+    #shopInterface.show {
+  display: flex;      /* on passe en flex quand on ajoute la classe .show */
+}
+
+      /* Colonne gauche : image décor */
+      #shopInterface .shop-left {
+        flex: 1;
+        background: url('images/shop.png') no-repeat center center; /* :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1} */
+        background-size: cover;
+      }
+
+      /* Colonne droite : liste des upgrades */
+      #shopInterface .shop-right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 30px;
+        overflow-y: auto;
+      }
+      /* 1. Assure-toi que la colonne fait toute la hauteur dispo */
+      #shopInterface.show .shop-right {
+        height: 100%;
+        box-sizing: border-box;
+        
+        /* 2. on retire le gap et on met un padding top/bottom à 10% */
+        /*    => laisse 80% de zone "utile" entre ces paddings */
+        padding: 10% 30px;
+        
+        /* 3. on affiche en flex-column et on espace les items */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;  /* si tu veux centrer horizontalement */
+      }
+
+      /* 4. tes items reprennent leur largeur 80% si besoin */
+      .shop-right .item {
+        position: relative; 
+        flex: 0 0 auto;   /* taille selon le contenu */
+        width: 60%;       /* 80% de la largeur de .shop-right */
+        margin: 0;        /* on gère l’espacement avec justify-content */
+      }
+      /* 2) Transition + zoom de l’image */
+      .shop-right .item img {
+        transition: transform 0.2s ease;
+      }
+      .shop-right .item:hover img {
+        transform: scale(1.1);
+      }
+
+      /* 3) Style de la bulle de description (tooltip) */
+      .shop-right .item .tooltip {
         position: absolute;
-        top: 50%;
+        bottom: 100%;             /* au‑dessus de l’item */
         left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 200;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 10px;
+        transform: translateX(-50%);
+        margin-bottom: 8px;
+        padding: 6px 10px;
+        background: rgba(0, 0, 0, 0.85);
+        color: #fff;
+        font-size: 14px;
+        white-space: nowrap;
+        border-radius: 4px;
+        
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        z-index: 10;
+
+        /* +++ Ajustements pour agrandir la bulle +++ */
+        font-size: 20px;           /* taille de texte plus grande */
+        line-height: 1.4;          /* espacement entre les lignes */
+        padding: 10px 14px;        /* plus de marge interne */
+        min-width: 120px;          /* largeur minimale */
+        text-align: center;        /* centrer le texte si multi‑ligne */
+        border-radius: 6px;        /* coins plus arrondis si souhaité */
+      }
+
+      /* 4) Au survol : on fait apparaître la bulle */
+      .shop-right .item:hover .tooltip {
+        opacity: 1;
+      }
+
+      /* Style d’un item (image + bouton) */
+      #shopInterface .item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      #shopInterface .item img {
+        width: 64px;
+        height: 64px;
+        margin-right: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 8px rgba(0,0,0,0.6);
+      }
+      #shopInterface .item button {
+        flex: 1;
+        padding: 10px 15px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
         border-radius: 5px;
-        display: none;
-        color: white;
+        background: #ff8c00;
+        color: #fff;
+        transition: background .2s;
+      }
+      #shopInterface .item button:hover {
+        background: #e07b00;
       }
       #scoreDisplay, #timerDisplay {
         position: absolute;
@@ -62,7 +171,12 @@
     #playButton:hover { transform: scale(1.05); }
     #playButton:active {
       transform: scale(0.95);   /* petit effet de clic */
-    }      
+    }  
+    #skillsBar img{
+      width:64px; height:64px;
+      opacity:.9; border:2px solid #fff; border-radius:8px;
+      box-shadow:0 0 8px rgba(0,0,0,.6);
+}    
     </style>
     <!-- Utilisez la version max de Babylon.js (5.x) -->
     <script src="https://cdn.babylonjs.com/babylon.max.js"></script>
@@ -76,10 +190,53 @@
     <div id="menu">
       <img id="playButton" src="images/play.png" alt="Play DreamLand">
     </div>
+
     <div id="shopInterface">
-      <button id="buyRange">Buy range(30carrots)</button>
-      <button id="niveauSuivant">Next Level</button>    </div>
-      <div id="timerDisplay">Time Left: <span id="timer">30</span></div>
+      <!-- Colonne gauche : image boutique -->
+      <div class="shop-left"></div>
+    
+      <!-- Colonne droite : liste des améliorations -->
+      <div class="shop-right">
+        <div class="item" id="item-buyRange">
+          <img src="images/buyRange.png" alt="Buy Range">
+          <div class="tooltip">Add 0.2 pick up range.</div>
+          <button id="buyRange">Buy Range (30 carottes)</button>
+        </div>
+        <div class="item" id="item-buyFreeze">
+          <div class="tooltip">Freeze all the enemies for 5 seconds. Cooldown : 60s. Key : a </div>
+          <img src="images/gel.png" alt="Gel Ennemis">
+          <button id="buyFreeze">Gel ennemis (90 carottes)</button>
+        </div>
+        <div class="item" id="item-buySpeed">
+          <img src="images/speed.png" alt="Speed Boost">
+          <div class="tooltip">You speed is multiplied by 1.4 for 10 seconds. Cooldown : 60s. Key : r </div>
+          <button id="buySpeed">Speed Boost (65 carottes)</button>
+        </div>
+        <div class="item" id="item-buyDonate">
+          <img src="images/buyDonate.png" alt="Donner">
+          <div class="tooltip">You see a tip jar on the stand. Maybe the owner will give you a smile ! </div>
+          <button id="buyDonate">Déposer 15 carottes</button>
+        </div>
+        <div class="item" id="item-buyCarrotLover">
+          <img src="images/buyCarrotLover.png" alt="Carrot Lover">
+          <div class="tooltip">Gain +1 carrot everytime you pick up carrots</div>
+          <button id="buyCarrotLover">Carrot Lover (80 carottes)</button>
+        </div>
+        <div class="item" id="item-buyInsurance">
+          <img src="images/buyInsurance.png" alt="Assurance‑vie">
+          <div class="tooltip">You respawn instantly after dying in the void for 1 time during a level.</div>
+          <button id="buyInsurance">Assurance‑vie (80 carottes)</button>
+        </div>
+        <!-- Bouton suivant niveau en bas -->
+        <div class="item" id="item-niveauSuivant">
+          <img src="images/niveauSuivant.png" alt="Niveau Suivant">
+          <button id="niveauSuivant">CLICK HERE to go to the Next Level</button>
+        </div>
+      </div>
+    </div>
+    
+    
+    <div id="timerDisplay">Time Left: <span id="timer">30</span></div>
 
       <!-- Après : -->
       <div id="timerDisplay"
@@ -117,6 +274,27 @@
   <button id="playDiceBtn">Lancer les dés</button>
   <button id="closeMiniGameBtn" style="margin-left:10px;">Quitter</button>
   <div id="diceResult" style="margin-top:15px;"></div>
+</div>
+<div id="deathScreen"
+     style="display:none; position:absolute; top:50%; left:50%;
+            transform:translate(-50%,-50%); background:rgba(0,0,0,.8);
+            color:#fff; padding:25px 40px; border-radius:8px;
+            font-size:28px; text-align:center; z-index:400;">
+  Vous êtes mort.<br>
+  Réapparition dans <span id="respawnTimer">3</span>…
+</div>
+<!-- Notification(ex : buy boutique) -->
+<div id="toast"
+     style="display:none; position:absolute; top:20%; left:50%;
+            transform:translateX(-50%); padding:12px 24px;
+            background:rgba(0,0,0,.8); color:#fff; font-size:22px;
+            border-radius:8px; z-index:500; pointer-events:none;">
+  <!-- message injecté dynamiquement -->
+</div>
+<!-- BARRE DES APTITUDES -->
+<div id="skillsBar"
+     style="display:none; position:absolute; bottom:10px; right:10px;
+            z-index:150; gap:8px; height:70px; display:flex; align-items:end">
 </div>
     <!-- Chargement du script principal en tant que module -->
     <script type="module" src="js/main.js"></script>
