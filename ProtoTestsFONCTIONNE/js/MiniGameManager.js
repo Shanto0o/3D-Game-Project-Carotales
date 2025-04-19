@@ -92,9 +92,10 @@ export default class MiniGameManager {
       const d2 = Math.floor(Math.random() * 6) + 1;
       const sum = d1 + d2;
       let gain = 0;
-      if (d1 === d2)      gain = 50;
-      else if (sum >= 8)  gain = 20;
-      else if (sum >= 5)  gain = 10;
+      if (d1 === d2 === 6)      gain = 50;
+      else if (sum >= 10)  gain = 20;
+      else if (sum >= 5)  gain = 8;
+      else gain -= 7;
       // afficher les vraies faces
       this.img1.src = `images/dice${d1}.png`;
       this.img2.src = `images/dice${d2}.png`;
@@ -112,4 +113,4 @@ export default class MiniGameManager {
       this.playBtn.disabled = this.playsLeft <= 0;
     }
   }
-  
+
