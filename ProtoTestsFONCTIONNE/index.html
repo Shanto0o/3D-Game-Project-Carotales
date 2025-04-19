@@ -4,7 +4,16 @@
     <meta charset="UTF-8" />
     <title>BabylonJS Havok Physics Game</title>
     <style>
+
+    @font-face {
+      font-family: 'MyGameFont';
+      src: url('images/Kawaii Stitch.ttf') format('truetype');
+      /* ajouter src: url(...) format('woff2') si vous avez plusieurs formats */
+      font-weight: normal;
+      font-style: normal;
+    }
       html, body {
+        font-family: 'MyGameFont', sans-serif;
         width: 100%;
         height: 100%;
         margin: 0;
@@ -177,6 +186,43 @@
       opacity:.9; border:2px solid #fff; border-radius:8px;
       box-shadow:0 0 8px rgba(0,0,0,.6);
 }    
+    #fishingInterface {
+      display: none;            /* caché par défaut */
+      position: absolute;
+      inset: 0;                 /* couvre tout l’écran */
+      background: rgba(0,0,0,0.7);
+      align-items: center;      /* centrer le contenu */
+      justify-content: center;
+      z-index: 300;
+    }
+
+
+    /* Le bar */
+    #fishingBar {
+      position: relative;
+      width: 50px;    /* ou la taille que vous voulez */
+      height: 300px;
+      background: #444;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    /* La zone rouge */
+    #fishingRedZone {
+      position: absolute;
+      width: 100%;
+      height: 60px;         /* hauteur cible */
+      top: 120px;           /* placez‑la verticalement */
+      background: rgba(255,0,0,0.5);
+    }
+    /* Le curseur blanc */
+    #fishingHandle {
+      position: absolute;
+      width: 100%;
+      height: 20px;
+      background: #fff;
+      bottom: 0;
+      border-radius: 4px;
+    }
     </style>
     <!-- Utilisez la version max de Babylon.js (5.x) -->
     <script src="https://cdn.babylonjs.com/babylon.max.js"></script>
@@ -295,6 +341,74 @@
 <div id="skillsBar"
      style="display:none; position:absolute; bottom:10px; right:10px;
             z-index:150; gap:8px; height:70px; display:flex; align-items:end">
+</div>
+
+<!-- Mini‑jeu de pêche -->
+<div id="fishingInterface"
+     style="display:none;
+            position:absolute;
+            inset:0;
+            background:rgba(0,0,0,0.7);
+            align-items:center;
+            justify-content:center;
+            gap:40px;
+            z-index:300;">
+
+  <!-- 1) Instructions à gauche -->
+  <div id="fishingInstructions"
+       style="width:300px;
+              color:white;
+              padding:20px;
+              background:rgba(0,0,0,0.5);
+              border-radius:8px;
+              text-align:left;">
+    <h3 style="margin-top:0;">How to Fish</h3>
+    <p>Press F to move your bobber !</p>
+    <p>To catch your prize, you have to keep the bobber in the red area.</p>
+  </div>
+
+  <!-- 2) Barre de pêche au centre -->
+  <div id="fishingBar"
+       style="position:relative;
+              width:50px;
+              height:300px;
+              background:#444;
+              border-radius:8px;
+              overflow:hidden;">
+    <div id="fishingRedZone"
+         style="position:absolute;
+                width:100%;
+                height:100px;
+                top:100px;
+                background:rgba(255,0,0,0.5);"></div>
+    <div id="fishingHandle"
+         style="position:absolute;
+                width:100%;
+                height:20px;
+                background:#fff;
+                bottom:0;
+                border-radius:4px;
+                transition:bottom 0.1s linear;"></div>
+  </div>
+
+  <!-- 3) Timer à droite, titre + encadré -->
+  <div id="fishingTimer"
+       style="color:white;
+              text-align:center;
+              font-size:16px;
+              line-height:1.4;">
+    <div>Red Zone Timer :</div>
+    <div id="fishingTimerValue"
+         style="margin-top:8px;
+                padding:8px 12px;
+                background:rgba(0,0,0,0.5);
+                border:1px solid white;
+                border-radius:4px;
+                min-width:100px;">
+      5 sec remaining
+    </div>
+  </div>
+
 </div>
     <!-- Chargement du script principal en tant que module -->
     <script type="module" src="js/main.js"></script>
