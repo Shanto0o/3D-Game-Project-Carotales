@@ -24,6 +24,8 @@ export default class Enemy {
     // seuil sous lequel on considère que l'ennemi est tombé
     this.voidThreshold = -5;
 
+    this.frozen = false;       // <<< pour geler l'ennemi
+
     // création du mesh (simple boîte rouge)
     this.mesh = BABYLON.MeshBuilder.CreateBox(
       'enemy', { size: 2 }, scene
@@ -38,12 +40,25 @@ export default class Enemy {
     this.mesh.ellipsoidOffset = new BABYLON.Vector3(0, 1, 0);
     this.mesh.checkCollisions = true;
   }
+
+  freeze(duration = 5000) {        // <<< NEW
+    if (this.frozen) return;       // déjà figé
+    this.frozen = true;
+    let currentspeed = this.speed; // sauvegarde de la vitesse courante
+    this.speed = 0;               // on fige l'ennemi
+
+    setTimeout(() => {             // auto‑dégel
+      this.frozen = false;
+      this.speed = currentspeed;  // on remet la vitesse d'origine
+    }, duration);
+  }
   
 
   /**
    * @param {Player} player 
    */
   update(player) {
+    if (this.frozen) return;
     const pos = this.mesh.position;
     const playerPos = player.mesh.position;
     const toPlayer = playerPos.subtract(pos);
