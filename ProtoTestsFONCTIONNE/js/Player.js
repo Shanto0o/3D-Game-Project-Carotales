@@ -11,6 +11,7 @@
         this.gravity = 0.009;
         this.velocityY = 0;
         this.isJumping = false;
+        this.currentSpeedMult = 1;
     
         // Définir un ellipsoïde de collision pour mieux gérer le glissement sur des pentes
         this.mesh.ellipsoid = new BABYLON.Vector3(1, 1, 1);
@@ -71,7 +72,7 @@
         const forward = camera.getForwardRay().direction.clone();
         forward.y = 0;
         forward.normalize();
-        const speed = 0.13;
+        const speed = 0.13 * this.currentSpeedMult;
         const movement = new BABYLON.Vector3();
     
         // Rotation fluide vers la direction de déplacement
