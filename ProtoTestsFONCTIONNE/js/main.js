@@ -17,6 +17,10 @@ let timeLeft = 200; // Temps en secondes par niveau
 let timerInterval;
 let gamePaused = false;
 
+let spawnPosition;          // mémorise la position de départ
+let playerDead = false;     // true pendant les 3 s
+let invulnerable = false;  // invulnérabilité temporaire après respawn
+
 // Système de niveaux
 let currentLevel = 1;
 const maxLevel = 10;
@@ -29,6 +33,31 @@ let chestOpened = false;   // pour qu’on ne puisse l’ouvrir qu’une fois
 
 // Boutique / monnaie
 let euros = 0; // Solde en €
+let currentRangeMult = 1; // Multiplie la portée de ramassage
+
+
+// SORTS ACTIVABLES
+// --- Sort Gel ---
+let freezeBought   = false;   // acheté ?
+let freezeActive   = false;   // en cours d’effet ? 
+let freezeCooldown = false;                      // ← flag de cooldown
+const freezeCooldownDuration = 60_000;           // ← durée du cooldown en ms (60 s)
+let lastFreezeTime = 0;                        // ← timestamp du dernier gel
+
+// Sort Speed
+let speedBought    = false;
+let speedActive    = false;
+let speedCooldown  = false;
+const speedDuration        = 10_000;    // effet : 10 s
+const speedCooldownDuration= 60_000;    // recharge : 60 s
+let lastSpeedTime  = 0;
+
+// Carrot Lover : nombre de carottes bonus a chaque récupération de carotte
+let carrotLoverStacks = 0;
+
+// Assurance‑vie
+let insuranceBought = false;
+let insuranceUsed   = false;
 
 let miniGameManager;
 
@@ -101,10 +130,13 @@ function startGame() {
 
     // Vérification des collisions avec les orbes
     orbsManager.checkCollisions(player, () => {
-      euros += 5; // 5 euro par orbe collectée
+      const baseGain = 5;
+      const bonus    = carrotLoverStacks;               // +1 par stack
+      const total    = baseGain + bonus;
+      euros += total;
       updateEurosUI();
+      showToast(`+${total} carottes${bonus>0 ? ` (${baseGain}+${bonus})` : ""}`, 1500);
       document.getElementById("timer").textContent = timeLeft;
-
     });
 
     // mise à jour des ennemis
@@ -141,7 +173,28 @@ function startGame() {
       }
     }
 
+    // Vérification des collisions avec les ennemis
+    if (!playerDead && !invulnerable && currentLevel >= 2) {
+      enemiesManager.enemies.forEach(enemy => {
+        if (enemy.mesh.intersectsMesh(player.mesh, false)) {
+          handlePlayerDeath(5);
+        }
+      });
+    }
 
+    if (!playerDead && !invulnerable && player.mesh.position.y < -50) {
+      if (insuranceBought && !insuranceUsed) {
+        // utilisation de l’assurance‑vie
+        insuranceUsed = true;
+        player.mesh.position.copyFrom(spawnPosition);
+        showToast("Votre assurance‑vie vous ramène au spawn !", 3000);
+        // accordez 1 s d’invulnérabilité pour éviter d’enchainer sur un autre kill immédiat
+        invulnerable = true;
+        setTimeout(() => invulnerable = false, 1000);
+      } else {
+        handlePlayerDeath(10);
+      }
+    }
 
     scene.render();
   });
@@ -155,6 +208,7 @@ function createScene() {
   // Instanciez d'abord le player
   player = new Player(scene);
   
+  spawnPosition = player.mesh.position.clone();   // point d’apparition
 
   
   // Instanciez orbsManager sans orbes initiaux (ou avec 0 orbe)
@@ -435,6 +489,28 @@ function modifySettings() {
       case "e":
         inputStates.interact = true;
         break;
+      case "a":                            // <<< NEW
+        if (freezeBought && !freezeActive && !gamePaused){
+          if (freezeCooldown) {
+            const remaining = Math.ceil((freezeCooldownDuration - (Date.now() - lastFreezeTime)) / 1000);
+            showToast("GEL : En attente de recharge... " + remaining + "s restantes", 2500);
+            return;                             // pas de cooldown
+          } else {
+          triggerFreeze();
+          }
+        }
+      break;
+      case "r":
+        if (!speedBought) {
+          showToast("Speed non débloqué !");
+        } else if (speedActive) {
+          showToast("Speed déjà actif !");
+        } else if (speedCooldown) {
+          // on ne fait rien, le cooldown est visible sur l’icône
+        } else if (!gamePaused) {
+          triggerSpeed();
+        }
+        break;
     }
   });
   
@@ -513,35 +589,290 @@ function enablePointerLock(scene) {
 function levelComplete() {
   clearInterval(timerInterval);
   gamePaused = true;
-  document.getElementById("eurosDisplay").textContent = euros;
+  updateEurosUI();
   console.log("Niveau terminé, conversion en euros :", euros);
   openShopInterface();
 }
 
 function openShopInterface() {
   const shopInterface = document.getElementById("shopInterface");
-  shopInterface.style.display = "block";
+  shopInterface.classList.add("show");
   document.exitPointerLock();
   document.getElementById("buyRange").onclick = buyRangeBonus;
   document.getElementById("niveauSuivant").onclick = nextLevel;
+  document.getElementById("buyFreeze").onclick = buyFreezeBonus;
+  document.getElementById("buySpeed").onclick   = buySpeedBonus;
+  document.getElementById("buyDonate").onclick  = donateBonus;
+  document.getElementById("buyCarrotLover").onclick = buyCarrotLoverBonus;
+  document.getElementById("buyInsurance").onclick   = buyInsuranceBonus;
   console.log("affichage boutique :", euros);
 }
 
 function closeShopInterface() {
   canvas.requestPointerLock();
   document.getElementById("shopInterface").style.display = "none";
+  shopInterface.classList.remove("show");
 }
 
 
 function buyRangeBonus() {
   if (euros >= 30) {
     euros -= 30;
-    player.pickupBox.scaling = player.pickupBox.scaling.multiplyByFloats(1.1, 1.1, 1.1);
+    currentRangeMult += 0.2; // Augmente la portée de ramassage de 0.2
+    player.pickupBox.scaling = player.pickupBox.scaling.multiplyByFloats(currentRangeMult, currentRangeMult, currentRangeMult);
     updateEurosUI();
+    showToast("✓ Portée augmentée ! Multiplicateur actuel : "+ currentRangeMult +".",2500);
     console.log("Bonus portée acheté");
   } else {
     console.log("Pas assez d'euros pour augmenter la portée");
+    showToast("Pas assez de carottes !", 2500);
   }
+}
+
+function buyFreezeBonus(){
+  if (freezeBought){ showToast("Déjà acheté !"); return; }
+  if (euros>=10){
+    euros -= 10;
+    freezeBought = true;
+    addSkillIcon("iconFreeze","images/gel.png",freezeCooldownDuration);   // <<< NEW icône
+    updateEurosUI();
+    showToast("Sort Gel débloqué !");
+    document.getElementById("item-buyFreeze").style.display = "none";
+  }else{
+    showToast("Pas assez de carottes !");
+  }
+}
+
+// Change dynamiquement l’image d’une aptitude déjà placée
+function update_skillicon(id, newSrc){
+  const img = document.getElementById(id);
+  if (img) img.src = newSrc;
+}
+
+function triggerFreeze() {
+  freezeActive   = true;
+  freezeCooldown = true;
+  lastFreezeTime = Date.now();
+
+  // change l’icône pour indiquer le cooldown
+  update_skillicon("iconFreeze", "images/gel_cd.png");
+  showToast("Ennemis gelés ! 5 s");
+
+  // applique le gel
+  enemiesManager.enemies.forEach(e => e.freeze(5000));
+
+  // fin de l’effet de gel au bout de 5 s
+  setTimeout(() => {
+    // dégel
+    enemiesManager.enemies.forEach(e => e.frozen = false);
+    freezeActive = false;
+  }, 5000);
+
+  startCooldown("iconFreeze");
+  // fin du cooldown au bout de 60 s
+  setTimeout(() => {
+    freezeCooldown = false;
+    update_skillicon("iconFreeze", "images/gel.png");
+    showToast("Sort Gel prêt à être relancé !");
+  }, freezeCooldownDuration);
+}
+
+function donateBonus() {
+  console.log("donateBonus invoked – euros =", euros);
+  if (euros >= 15) {
+    euros -= 15;
+    updateEurosUI();
+    showToast("Merci pour votre générosité ! Votre don fait chaud au cœur !", 3000);
+  } else {
+    showToast("Pas assez de carottes pour faire un don !", 2500);
+  }
+}
+
+function buySpeedBonus() {
+  if (speedBought) {
+    showToast("Déjà acheté !");
+    return;
+  }
+  if (euros >= 10) {
+    euros    -= 10;
+    speedBought = true;
+    // ajoute l’icône avec son cooldown
+    addSkillIcon("iconSpeed", "images/speed.png", speedCooldownDuration);
+    updateEurosUI();
+    showToast("Speed débloqué !");
+    document.getElementById("buySpeed").disabled = true;
+  } else {
+    showToast("Pas assez de carottes !");
+  }
+}
+
+function triggerSpeed() {
+  speedActive   = true;
+  speedCooldown = true;
+  lastSpeedTime = Date.now();
+
+  // change l’icône pour indiquer le cooldown
+  update_skillicon("iconSpeed", "images/speed_cd.png");
+  showToast("Speed activé ! 10 s");
+
+  // démarre le compteur visuel
+  startCooldown("iconSpeed");
+
+  // applique le multiplicateur
+  player.currentSpeedMult = 1.4;
+
+  // fin de l’effet au bout de 10 s
+  setTimeout(() => {
+    player.currentSpeedMult = 1;
+    speedActive = false;
+  }, speedDuration);
+
+  // fin du cooldown après 60 s
+  setTimeout(() => {
+    speedCooldown = false;
+    update_skillicon("iconSpeed", "images/speed.png");
+    showToast("Speed prêt à être relancé !");
+  }, speedCooldownDuration);
+}
+
+function buyCarrotLoverBonus() {
+  if (euros >= 10) {
+    euros -= 10;
+    carrotLoverStacks++;
+    updateEurosUI();
+    showToast(`Carrot Lover acheté ! Niveau : ${carrotLoverStacks}`, 3000);
+  } else {
+    showToast("Pas assez de carottes pour Carrot Lover !", 2500);
+  }
+}
+
+function buyInsuranceBonus() {
+  if (insuranceBought) {
+    showToast("Vous avez déjà cette assurance !");
+    return;
+  }
+  if (euros >= 10) {
+    euros -= 10;
+    insuranceBought = true;
+    updateEurosUI();
+    showToast("Assurance‑vie activée pour ce niveau !", 3000);
+    document.getElementById("item-buyInsurance").style.display = "none";
+  } else {
+    showToast("Pas assez de carottes pour l’assurance !", 2500);
+  }
+}
+
+function handlePlayerDeath( counter) {
+
+  if (playerDead || invulnerable) return;   // ← Ajouté
+  playerDead = true;
+  gamePaused = true;            // stoppe IA, déplacements, etc.
+
+  // masque le mesh + collisions
+  player.mesh.checkCollisions = false;
+
+  // UI
+  const deathScreen   = document.getElementById("deathScreen");
+  const respawnSpan   = document.getElementById("respawnTimer");
+  respawnSpan.textContent = counter;
+  deathScreen.style.display = "block";
+  document.exitPointerLock();
+
+  const int = setInterval(() => {
+    counter--;
+    respawnSpan.textContent = counter;
+    if (counter <= 0) {
+      clearInterval(int);
+      respawnPlayer();
+    }
+  }, 1000);
+}
+
+// Affiche un message court pendant une durée donnée
+function showToast(message, duration = 2000) {
+  const t = document.getElementById("toast");
+  t.textContent   = message;
+  t.style.opacity = "1";
+  t.style.display = "block";
+
+  // disparition progressive
+  setTimeout(() => {
+    t.style.transition = "opacity .5s";
+    t.style.opacity    = "0";
+    setTimeout(() => {
+      t.style.display   = "none";
+      t.style.transition = "";
+    }, 500);
+  }, duration);
+}
+
+function respawnPlayer() {
+  // remet le lapin à son spawn
+  player.mesh.position.copyFrom(spawnPosition);
+  player.mesh.checkCollisions  = true;
+
+  // cache l’UI
+  document.getElementById("deathScreen").style.display = "none";
+  canvas.requestPointerLock();
+
+  playerDead = false;
+  gamePaused = false;
+
+  // 1 s de grâce pour sortir de la hit‑box
+  invulnerable = true;
+  setTimeout(() => invulnerable = false, 1000);
+}
+
+function addSkillIcon(id, src, cooldownMs) {
+  const bar = document.getElementById("skillsBar");
+  if (bar.children.length === 0) bar.style.display = "flex";
+  if (bar.children.length >= 3) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "skill";
+  wrapper.style.position = "relative";
+  wrapper.dataset.cooldownMs = cooldownMs;
+
+  const img = document.createElement("img");
+  img.id  = id;
+  img.src = src;
+  wrapper.appendChild(img);
+
+  const cdText = document.createElement("span");
+  cdText.id = `${id}_cd`;
+  Object.assign(cdText.style, {
+    position:   "absolute",
+    top:        "-18px",
+    left:       "50%",
+    transform:  "translateX(-50%)",
+    fontSize:   "14px",
+    color:      "white",
+    textShadow: "0 0 4px black",
+    display:    "none"
+  });
+  wrapper.appendChild(cdText);
+
+  bar.appendChild(wrapper);
+} 
+
+function startCooldown(iconId) {
+  const wrapper  = document.getElementById(iconId).parentElement;
+  const cdSpan   = document.getElementById(`${iconId}_cd`);
+  const duration = parseInt(wrapper.dataset.cooldownMs, 10);
+  let remaining   = Math.ceil(duration / 1000);
+
+  cdSpan.textContent   = remaining;
+  cdSpan.style.display = "block";
+
+  const iv = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(iv);
+      cdSpan.style.display = "none";
+    } else {
+      cdSpan.textContent = remaining;
+    }
+  }, 1000);
 }
 
 function nextLevel() {
@@ -568,6 +899,7 @@ function nextLevel() {
 
       // Réinitialiser la position du joueur à son point de départ (exemple : (0,10,0))
       player.mesh.position = new BABYLON.Vector3(0, 3, 0);
+      spawnPosition = player.mesh.position.clone();
 
       gamePaused = false;
       startTimer();
