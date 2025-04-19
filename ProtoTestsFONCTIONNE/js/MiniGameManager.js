@@ -8,29 +8,42 @@ export default class MiniGameManager {
       this.resultDiv = document.getElementById("diceResult");
       this.playBtn   = document.getElementById("playDiceBtn");
       this.closeBtn  = document.getElementById("closeMiniGameBtn");
-      this.getEuros = getEuros;
-      this.setEuros = setEuros;
-      this.maxPlays = 3;
+      this.getEuros  = getEuros;
+      this.setEuros  = setEuros;
+      this.maxPlays  = 3;
       this.playsLeft = this.maxPlays;
   
-      // Met à jour l'affichage du bouton
-      this.updatePlaysDisplay();
+      // Crée les éléments <img> pour les dés
+      this.img1 = document.createElement('img');
+      this.img2 = document.createElement('img');
+      [this.img1, this.img2].forEach(img => {
+        img.style.width = '50px';
+        img.style.height = '50px';
+        img.style.margin = '0 5px';
+      });
+      // Zone d'affichage: images + texte
+      this.resultDiv.innerHTML = '';
+      this.resultDiv.append(this.img1, this.img2, document.createElement('br'));
+      this.textResult = document.createElement('div');
+      this.resultDiv.append(this.textResult);
   
       this.playBtn.addEventListener("click", () => this.playDice());
       this.closeBtn.addEventListener("click", () => this.hideInterface());
+      this.updatePlaysDisplay();
     }
   
     updatePlaysDisplay() {
-      // Affiche le nombre de lancers restants directement sur le bouton
       this.playBtn.textContent = `Lancer les dés (${this.playsLeft} essais restants)`;
-      this.playBtn.disabled = this.playsLeft <= 0;
+      this.playBtn.disabled   = this.playsLeft <= 0;
     }
   
     showInterface() {
-      this.resultDiv.textContent = "";
       this.interface.style.display = "block";
-      // Réactualise le texte et l'état du bouton à chaque ouverture
       this.updatePlaysDisplay();
+      // réinitialise les images et texte
+      this.img1.src = `images/dice1.png`;
+      this.img2.src = `images/dice6.png`;
+      this.textResult.textContent = '';
     }
   
     hideInterface() {
@@ -38,44 +51,65 @@ export default class MiniGameManager {
     }
   
     playDice() {
-      // Vérifie le nombre de lancers restants
       if (this.playsLeft <= 0) {
-        this.resultDiv.textContent = "Plus de lancers disponibles.";
+        this.textResult.textContent = "Plus de lancers disponibles.";
         return;
       }
-      this.updatePlaysDisplay();
-  
-      // Lecture du solde actuel
       const euros = this.getEuros();
-      // Coût fixe de la partie
       if (euros < 10) {
-        this.resultDiv.textContent = "Pas assez d'euros !";
+        this.textResult.textContent = "Pas assez d'euros !";
         return;
       }
       this.playsLeft--;
-      // Débiter la mise
-      let nouveauSolde = euros - 10;
+      this.updatePlaysDisplay();
+  
+      // désactiver le bouton pendant l'animation
+      this.playBtn.disabled = true;
+      this.textResult.textContent = "Lancement des dés...";
+  
+      let frames = 0;
+      const anim = setInterval(() => {
+        const a = Math.floor(Math.random() * 6) + 1;
+        const b = Math.floor(Math.random() * 6) + 1;
+        // afficher faces d'animation aléatoires
+        this.img1.src = `images/dice${a}.png`;
+        this.img2.src = `images/dice${b}.png`;
+        frames++;
+        if (frames >= 10) {
+          clearInterval(anim);
+          this.performRoll();
+        }
+      }, 100);
+    }
+  
+    performRoll() {
+      // débiter la mise
+      let nouveauSolde = this.getEuros() - 10;
       this.setEuros(nouveauSolde);
   
-      // Lancer les dés
+      // résultat
       const d1 = Math.floor(Math.random() * 6) + 1;
       const d2 = Math.floor(Math.random() * 6) + 1;
       const sum = d1 + d2;
       let gain = 0;
-      // Règles de gain
-      console.log(d1, d2, sum);
-      if (d1 === d2 === 6)      gain = 30;  // paire
-      else if (sum >= 10)  gain = 20;  // total élevé
-      else if (sum >= 5)  gain = 7;  // total moyen
-      else gain = -10;  // total faible
-      // Appliquer le gain
+      if (d1 === d2)      gain = 50;
+      else if (sum >= 8)  gain = 20;
+      else if (sum >= 5)  gain = 10;
+      // afficher les vraies faces
+      this.img1.src = `images/dice${d1}.png`;
+      this.img2.src = `images/dice${d2}.png`;
+  
+      // appliquer le gain
       nouveauSolde += gain;
       this.setEuros(nouveauSolde);
   
-      // Affichage du résultat
-      this.resultDiv.innerHTML =
+      // affichage du texte résultat
+      this.textResult.innerHTML =
         `Résultat : ${d1} + ${d2} = ${sum}<br>` +
         `Vous ${gain > 0 ? "gagnez" : "perdez"} ${gain} €`;
+  
+      // réactiver le bouton si des essais restent
+      this.playBtn.disabled = this.playsLeft <= 0;
     }
   }
   
