@@ -8,6 +8,9 @@ export default class Player {
     this.mesh.scaling = new BABYLON.Vector3(4, 4, 4);
     this.speed = 12.0;
     this.speedMult = 1.0;    // ← nouveau
+
+
+    this.debugFly = true;  // ← nouveau
    
     this.controller = new BABYLON.PhysicsCharacterController(this.mesh.position, {capsuleHeight: 2, capsuleRadius: 0.5}, scene);
     this.orientation = BABYLON.Quaternion.Identity();
@@ -82,6 +85,10 @@ export default class Player {
     // State handling
     // depending on character state and support, set the new state
     getNextState(supportInfo) {
+      if (this.debugFly && this.wantJump > 0) {
+        this.wantJump--;
+        return "START_JUMP";
+      }
       if (this.state == "IN_AIR") {
         // Atterrissage : repasser en idle
         this.isJumping = false;
