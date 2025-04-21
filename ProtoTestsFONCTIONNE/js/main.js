@@ -4,6 +4,7 @@ import EnemiesManager from "./EnemiesManager.js";
 import MiniGameManager from "./MiniGameManager.js";
 import FishingManager from "./FishingManager.js";
 
+
 let canvas;
 let engine;
 let scene;
@@ -13,7 +14,12 @@ let orbsManager;
 let enemiesManager;
 let fishingManager;
 let ground;
+let camera
 let finishMesh = null;
+
+globalThis.HK = await HavokPhysics();
+
+
 
 
 let timeLeft = 200; // Temps en secondes par niveau
@@ -126,7 +132,7 @@ async function startGame() {
   );
   scene = createScene();
   modifySettings();
-  let camera = createThirdPersonCamera(scene, player.mesh);
+  camera = createThirdPersonCamera(scene, player.mesh);
 
 
   //musique
@@ -139,8 +145,7 @@ async function startGame() {
   if (!BABYLON.Engine.audioEngine.unlocked) {
     BABYLON.Engine.audioEngine.unlock();
   }
-  // Par défaut, le saut est désactivé tant qu'il n'est pas acheté
-  player.canJump = false;
+ 
 
   startTimer();
 
@@ -151,11 +156,10 @@ async function startGame() {
     }
 
     if (!player.canJump) {
-      inputStates.jump = false;
+      inputStates.jump = 0;
     }
 
-    player.move(inputStates, camera);
-    player.canJump = true;  
+      
 
 
     // Vérification des collisions avec les orbes
@@ -264,8 +268,12 @@ function createMovingPlatform(scene, pathPoints, speed = 0.02) {
     meshes.forEach(m => {
       m.checkCollisions = true; // collisions avec le sol
       m.receiveShadows = true;  // ombres
+      if (!(m.name == "__root__")) {
+        new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
+      }
     });
     platform.checkCollisions = true;
+    
     platform.receiveShadows = true;
     platform.position = pathPoints[0].clone(); // position initiale
     platform.scaling = new BABYLON.Vector3(3, 3, 3); // Ajuste la taille de la plateforme
@@ -326,7 +334,11 @@ function createChest(x, y, z, chestId) {
 }
 
 function createScene() {
+  
   let scene = new BABYLON.Scene(engine);
+  var gravityVector = new BABYLON.Vector3(0, -9.81, 0);
+  const physicsPlugin = new BABYLON.HavokPlugin(false);
+  scene.enablePhysics(gravityVector, physicsPlugin);
   //scene.clearColor = new BABYLON.Color3(0.1, 0.1, 0.3);
   createLights(scene);
 
@@ -382,6 +394,38 @@ function createScene() {
   );
 
 
+  scene.onBeforeRenderObservable.add((scene) => {
+    player.mesh.position.copyFrom(player.controller.getPosition());
+
+    // camera following
+    var cameraDirection = camera.getDirection(new BABYLON.Vector3(0,0,1));
+    cameraDirection.y = 0;
+    cameraDirection.normalize();
+    camera.setTarget(BABYLON.Vector3.Lerp(camera.getTarget(), player.mesh.position, 0.1));
+    var dist = BABYLON.Vector3.Distance(camera.position, player.mesh.position);
+    const amount = (Math.min(dist - 6, 0) + Math.max(dist - 9, 0)) * 0.04;
+    cameraDirection.scaleAndAddToRef(amount, camera.position);
+    camera.position.y += (player.mesh.position.y + 2 - camera.position.y) * 0.04;
+});
+
+
+  scene.onAfterPhysicsObservable.add((_) => {
+    if (scene.deltaTime == undefined) return;
+    let dt = scene.deltaTime / 1000.0;
+    if (dt == 0) return;
+
+    player.move(inputStates, camera);
+
+    let down = new BABYLON.Vector3(0, -1, 0);
+    let support = player.controller.checkSupport(dt, down);
+
+    BABYLON.Quaternion.FromEulerAnglesToRef(0, camera.rotation.y, 0, player.orientation);
+    let desiredLinearVelocity = player.getDesiredVelocity(dt, support, player.controller.getVelocity());
+    player.controller.setVelocity(desiredLinearVelocity);
+
+    player.controller.integrate(dt, support, player.gravity);
+
+});
 
 
 
@@ -421,12 +465,19 @@ function createGamblingTable (x,y,z) {
         
             // Activer les collisions pour la table
             gamblingTableMesh.checkCollisions = true;
-        
+            meshes.forEach(m => {
+              m.receiveShadows = true;  // ombres
+              if (!(m.name == "__root__")) {
+                new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
+              }
+            });
+
             //zone de la table
             miniGameTriggerZone = BABYLON.MeshBuilder.CreateBox("miniZone", { size: 3 }, scene);
             miniGameTriggerZone.position = gamblingTableMesh.position.clone(); // Placez le cube au même endroit que la table
             miniGameTriggerZone.isVisible = false; // Rendre le cube invisible (ou semi-transparent si nécessaire)
             miniGameTriggerZone.checkCollisions = true; // Activer les collisions pour la zone
+            new BABYLON.PhysicsAggregate(miniGameTriggerZone, BABYLON.PhysicsShapeType.MESH);
 
             // Créer une zone en cube autour de la table pour gérer les interactions
             miniGameZone = BABYLON.MeshBuilder.CreateBox("miniZone", { size: 6 }, scene);
@@ -491,6 +542,11 @@ function createGround(scene, level) {
           // Affectez chaque mesh importé au parent et activez les collisions
           meshes.forEach((mesh) => {
               mesh.checkCollisions = true;
+              mesh.isPickable = false; 
+              if (!(mesh.name == "__root__")) {
+                new BABYLON.PhysicsAggregate(mesh, BABYLON.PhysicsShapeType.MESH);
+              }
+
           });
 
           // Ajustez la position et l'échelle selon vos besoins
@@ -536,6 +592,9 @@ function createGround(scene, level) {
             meshes.forEach(m => {
               m.checkCollisions  = true;
               m.receiveShadows   = true;
+              if (!(m.name == "__root__")) {
+                new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
+              }
             });
           
             // Création de la hit‑box invisible
@@ -589,7 +648,9 @@ function createGround(scene, level) {
 
           // Affectez chaque mesh importé au parent et activez les collisions
           meshes.forEach((mesh) => {
-              mesh.checkCollisions = true;
+              if (!(mesh.name == "__root__")) {
+                new BABYLON.PhysicsAggregate(mesh, BABYLON.PhysicsShapeType.MESH);
+              }
           });
 
           // Ajustez la position et l'échelle selon vos besoins
@@ -686,7 +747,7 @@ function createLights(scene) {
 }
 
 function createThirdPersonCamera(scene, target) {
-  let camera = new BABYLON.ArcRotateCamera(
+  camera = new BABYLON.ArcRotateCamera(
     "ThirdPersonCamera",
     BABYLON.Tools.ToRadians(0),
     BABYLON.Tools.ToRadians(45),
@@ -733,7 +794,8 @@ function modifySettings() {
         inputStates.right = true;
         break;
       case " ":
-        inputStates.jump = true;
+        inputStates.jump++;
+        player.wantJump ++;
         break;
       case "e":
         inputStates.interact = true;
@@ -783,7 +845,8 @@ function modifySettings() {
         inputStates.right = false;
         break;
       case " ":
-        inputStates.jump = false;
+        inputStates.jump = 0;
+        player.wantJump = 0;
         break;
         case "e":
           inputStates.interact = false;
