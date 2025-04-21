@@ -30,4 +30,12 @@ export default class EnemiesManager {
     this.enemies = this.enemies.filter(e => !e._dead);
     this.enemies.forEach(e => e.update(player));
   }
+
+  resetAll() {
+    this.enemies.forEach(e => {
+      if (typeof e.reset === 'function') {
+        e.reset();
+      }
+    });
+  }
 }
