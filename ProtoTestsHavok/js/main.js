@@ -661,7 +661,7 @@ function createGround(scene, level) {
       });
       return null;
   } else if (level === 2) {
-      BABYLON.SceneLoader.ImportMesh("", "images/", "level2.glb", scene, function (meshes) {
+      BABYLON.SceneLoader.ImportMesh("", "images/", "niveau2.glb", scene, function (meshes) {
           // Stocke les meshes importés
           importedMeshes = meshes;
 
@@ -1219,7 +1219,7 @@ function nextLevel() {
     currentLevel++;
     orbsTarget = currentLevel * 5;
     collectedOrbs = 0;
-    timeLeft = 30;
+    timeLeft = 90;
     document.getElementById("timer").textContent = timeLeft;
 
      // 1) On replace immédiatement le joueur au spawn
