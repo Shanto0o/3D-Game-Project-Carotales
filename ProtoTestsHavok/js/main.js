@@ -14,7 +14,7 @@ let orbsManager;
 let enemiesManager;
 let fishingManager;
 let ground;
-let camera
+let camera;
 let finishMesh = null;
 let importedMeshes = []; // Tableau pour stocker les meshes importés
 let movingPlatforms = []; // Tableau pour stocker les plateformes en mouvement
@@ -23,7 +23,8 @@ globalThis.HK = await HavokPhysics();
 
 
 
-let timeLeft = 200; // Temps en secondes par niveau
+let timerDuration = 200;
+let timeLeft;
 let timerInterval;
 let gamePaused = false;
 
@@ -44,7 +45,7 @@ let collectedOrbs = 0; // Compteur d'orbes collectées
 let euros = 0; // Solde en €
 let currentRangeMult = 1; // Multiplie la portée de ramassage
 
-
+let shopPosition; 
 // SORTS ACTIVABLES
 // --- Sort Gel ---
 let freezeBought   = false;   // acheté ?
@@ -107,14 +108,24 @@ const eurosDiv = document.getElementById("eurosDisplay");
 
 
 // Lancement du jeu (niveau 1) lorsque l'utilisateur clique sur "Jouer"
-document.getElementById("playButton").addEventListener("click", async () => {
-  
-  console.log("Bouton Jouer cliqué");
+document.getElementById("playButton").addEventListener("click", () => {
+  console.log("Bouton Jouer cliqué — affichage de l'intro");
   document.getElementById("menu").style.display = "none";
+  document.getElementById("introInterface").style.display = "flex";
+});
+
+// Au clic sur "Continuer", on lance vraiment le jeu
+document.getElementById("introContinue").addEventListener("click", async () => {
+  console.log("Intro terminée — démarrage du jeu");
+  // On cache l'overlay
+  document.getElementById("introInterface").style.display = "none";
+  // On affiche le timer et le compteur de carottes
   timerDiv.style.display = "block";
   eurosDiv.style.display = "block";
-  const bgMusic = await startGame(); // Attendre que la musique soit prête
-  bgMusic.play(); // Jouer la musique
+  // On appelle startGame normalement
+  const bgMusic = await startGame();
+  bgMusic.play();
+  // On prend le pointer lock pour contrôler la caméra
   canvas.requestPointerLock();
 });
 
@@ -148,7 +159,7 @@ async function startGame() {
   }
  
 
-  startTimer();
+  startTimer(timerDuration);
   
 
   engine.runRenderLoop(() => {
@@ -162,7 +173,7 @@ async function startGame() {
     }
 
       
-
+    let nearInteract = false;
     // Vérification des collisions avec les orbes
     orbsManager.checkCollisions(player, () => {
       const baseGain = 5;
@@ -171,21 +182,24 @@ async function startGame() {
       euros += total;
       updateEurosUI();
       showToast(`+${total} carottes${bonus>0 ? ` (${baseGain}+${bonus})` : ""}`, 1500);
-      document.getElementById("timer").textContent = timeLeft;
     });
 
-    // Arrivée au point de fin → terminer le niveau
+        // —— Zone Shop (finishMesh) : “E : Open Shop” —— 
     if (finishMesh) {
-      const dist = BABYLON.Vector3.Distance(player.mesh.position, finishMesh.position);
-      if (dist < FINISH_THRESHOLD) {
-        levelComplete();
+      const distShop = BABYLON.Vector3.Distance(player.mesh.position, finishMesh.position);
+      if (distShop < 15) {
+        nearInteract = true;
+        promptDiv.textContent = "Press E to open Shop";
+        if (inputStates.interact) {
+          openShopInterface();
+        }
       }
     }
 
     updateEurosUI();
 
 
-    let nearInteract = false;
+    
 
     chests.forEach(({ mesh, id }) => {
       if (chestOpened[id]) return;  // déjà ouvert
@@ -202,6 +216,8 @@ async function startGame() {
         }
       }
     });
+
+
 
 
 
@@ -392,6 +408,15 @@ function createScene() {
     (msg, duration) => showToast(msg, duration)
   );
 
+  // branche le bouton "Leave"
+  const leaveBtn = document.getElementById('leaveFishingBtn');
+  if (leaveBtn) {
+    leaveBtn.addEventListener('click', () => {
+      fishingManager.hide();
+      canvas.requestPointerLock();
+    });
+  }
+
 
   // Par exemple juste après avoir instancié player et enemiesManager :
   scene._shadowGenerator.addShadowCaster(player.mesh);
@@ -466,6 +491,7 @@ function createFinishPoint(x , y, z) {
             
   // Création du point d'arrivée
   finishMesh = BABYLON.MeshBuilder.CreateBox("finish", { size: 2 }, scene);
+  shopPosition = finishMesh.position.clone(); // Mémoriser la position de la boutique
   finishMesh.position.set(x, y, z); // <-- coordonnées fixes
   finishMesh.isVisible = true; // Rendre la boîte invisible (utilisée uniquement pour les collisions)
   finishMesh.checkCollisions = true; // Activer les collisions pour la boîte
@@ -474,7 +500,8 @@ function createFinishPoint(x , y, z) {
   BABYLON.SceneLoader.ImportMesh("", "images/", "finish.glb", scene, (meshes) => {
       const finishModel = meshes[0]; // On suppose que le premier mesh est le modèle principal
       finishModel.parent = finishMesh; // Attacher le modèle à la boîte
-      finishModel.position = new BABYLON.Vector3(0,-3.5, 0); // Centrer le modèle sur la boîte
+      // tourner le panneau de 90° vers la droite
+      finishModel.rotation.y = Math.PI / 2; // Ajuster la rotation si nécessaire
       finishModel.scaling = new BABYLON.Vector3(1, 1, -1); // Ajuster l'échelle si nécessaire
       console.log("Modèle finish.glb chargé et attaché à la boîte");
   });
@@ -624,26 +651,42 @@ function createGround(scene, level) {
               }
 
           });
+          
           const spawnPositions = [
-              new BABYLON.Vector3(36, 2, -11),
-              new BABYLON.Vector3(-20, 3, 13),
-              new BABYLON.Vector3(-1, 3, 44),
-              new BABYLON.Vector3(38, 3, -5),
-              new BABYLON.Vector3(20, 3, -38),
+            new BABYLON.Vector3(17.6, 1, -31),
+            new BABYLON.Vector3(50.8, 1,  -59),
+            new BABYLON.Vector3(65.3, 1, -115.3),
+            new BABYLON.Vector3(83,1,-167.6),
+            new BABYLON.Vector3(211.9,1,-151),
+            new BABYLON.Vector3(104.9, 17, -36),
+            new BABYLON.Vector3(102.3, 43, -10.2),
+            new BABYLON.Vector3(113.5, 54.2, 12.5),
+            new BABYLON.Vector3(134.5, 56.2, 26.1),
+            new BABYLON.Vector3(198.9, 73, 86.8),
+            new BABYLON.Vector3(253.8,82,5,82.7),
+            new BABYLON.Vector3(253.1,94.4,55.9),
+            new BABYLON.Vector3(254,100,29.3),
+            new BABYLON.Vector3(233.6, 91, -29.9),
+            new BABYLON.Vector3(178.3,120,-58.9),
+            new BABYLON.Vector3(168.2,120,-50),
+            new BABYLON.Vector3(180.2,120,-52.8),
+            new BABYLON.Vector3(103.8,23,-92),
+            new BABYLON.Vector3(173.4,51,-127.5),
+            new BABYLON.Vector3(237.4,64,-98.3),
+            new BABYLON.Vector3(62.8,1,-101.6),
           ];
 
           orbsManager.createOrbsAtPositions(spawnPositions);
 
           console.log("Map t.glb chargée et ajustée pour le niveau 1");
 
-          createFinishPoint(6.6, 3.7, -82); // <-- coordonnées fixes
+          createFinishPoint(175.3, 120, -54.3); // <-- coordonnées fixes
 
           
 
-          createChest( 0.7, 0, -49,  `lvl1_chest1` );
-          createChest( 0.7, 0, -99,  `lvl1_chest2` );
+          createChest( 227.2, 68, 151.3,  `lvl1_chest1` );
 
-          createGamblingTable (31,0,-64);
+          createGamblingTable (176.8,120,-22.9);
 
 
           // 1) Crée tes plateformes statiques à partir de plat.glb
@@ -798,7 +841,6 @@ function createThirdPersonCamera(scene, target) {
 
 function modifySettings() {
   window.addEventListener("keydown", (event) => {
-    console.log("KeyDown:", event.key);
     let key = event.key.toLowerCase();
     switch(key) {
       case "z":
@@ -852,7 +894,6 @@ function modifySettings() {
   });
   
   window.addEventListener("keyup", (event) => {
-    console.log("KeyUp:", event.key);
     let key = event.key.toLowerCase();
     switch(key) {
       case "z":
@@ -890,17 +931,24 @@ function modifySettings() {
   window.addEventListener("resize", () => engine.resize());
 }
 
-function startTimer() {
-  console.log("[DEBUG] startTimer() level", currentLevel, "timeLeft=", timeLeft);
-  console.log("Timer démarré avec", timeLeft, "secondes");
+function startTimer(duration) {
+  // Si un timer était déjà en cours, on l’arrête
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
+  timeLeft = duration;
+  console.log("[DEBUG] startTimer() level", currentLevel, "timeLeft =", timeLeft);
+
+  // Mise à jour immédiate de l’affichage
   document.getElementById("timer").textContent = timeLeft;
+
   timerInterval = setInterval(() => {
     timeLeft--;
     document.getElementById("timer").textContent = timeLeft;
     console.log("Timer:", timeLeft);
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
-      alert("Game Over! ");
+      alert("Game Over!");
       engine.stopRenderLoop();
     }
   }, 1000);
@@ -935,24 +983,36 @@ function levelComplete() {
 }
 
 function openShopInterface() {
+  // 1) On pause le jeu et on stoppe le timer
+  gamePaused = true;
+  clearInterval(timerInterval);
+
+  // 2) On affiche l’interface shop
   const shopInterface = document.getElementById("shopInterface");
+  shopInterface.style.display = "flex";    // annule tout display:none inline
   shopInterface.classList.add("show");
   document.exitPointerLock();
-  document.getElementById("buyRange").onclick = buyRangeBonus;
-  document.getElementById("niveauSuivant").onclick = nextLevel;
-  document.getElementById("buyFreeze").onclick = buyFreezeBonus;
-  document.getElementById("buySpeed").onclick   = buySpeedBonus;
-  document.getElementById("buyDonate").onclick  = donateBonus;
-  document.getElementById("buyCarrotLover").onclick = buyCarrotLoverBonus;
-  document.getElementById("buyInsurance").onclick   = buyInsuranceBonus;
-  console.log("affichage boutique :", euros);
+
+  // 3) On rattache tous les handlers de boutons
+  document.getElementById("buyRange").onclick            = buyRangeBonus;
+  document.getElementById("buyFreeze").onclick           = buyFreezeBonus;
+  document.getElementById("buySpeed").onclick            = buySpeedBonus;
+  document.getElementById("buyDonate").onclick           = donateBonus;
+  document.getElementById("buyCarrotLover").onclick      = buyCarrotLoverBonus;
+  document.getElementById("buyInsurance").onclick        = buyInsuranceBonus;
+  document.getElementById("niveauSuivant").onclick       = nextLevel;
+  document.getElementById("closeShopBtn").onclick        = closeShopInterface;
 }
 
 function closeShopInterface() {
-  canvas.requestPointerLock();
   const shopInterface = document.getElementById("shopInterface");
   shopInterface.classList.remove("show");
+  // remove inline
   shopInterface.style.display = "none";
+
+  canvas.requestPointerLock();
+  gamePaused = false;
+  startTimer(timeLeft);
 }
 
 
@@ -1219,8 +1279,6 @@ function nextLevel() {
     currentLevel++;
     orbsTarget = currentLevel * 5;
     collectedOrbs = 0;
-    timeLeft = 90;
-    document.getElementById("timer").textContent = timeLeft;
 
      // 1) On replace immédiatement le joueur au spawn
      player.reset_position(scene);
@@ -1235,7 +1293,7 @@ function nextLevel() {
     console.log("[DEBUG] nextLevel() après unpause, gamePaused=", gamePaused);
 
     clearInterval(timerInterval);
-    startTimer();
+    startTimer(timerDuration); // redémarre le timer
 
     // Dispose les objets spécifiques du niveau précédent (coffre, table...)
     clearLevelObjects();
