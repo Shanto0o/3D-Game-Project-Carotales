@@ -7,6 +7,7 @@ export default class Player {
     this.mesh.position.y = 10;
     this.mesh.scaling = new BABYLON.Vector3(4, 4, 4);
     this.speed = 12.0;
+    this.speedMult = 1.0;    // ← nouveau
    
     this.controller = new BABYLON.PhysicsCharacterController(this.mesh.position, {capsuleHeight: 2, capsuleRadius: 0.5}, scene);
     this.orientation = BABYLON.Quaternion.Identity();
@@ -146,7 +147,9 @@ export default class Player {
 
 
 
-        let desiredVelocity = this.inputDirection.scale(this.speed).applyRotationQuaternion(this.orientation);
+        let desiredVelocity = this.inputDirection
+    .scale(this.speed * this.speedMult)
+    .applyRotationQuaternion(this.orientation);
     
         // Si aucune entrée et surface se déplace, on veut matcher sa vitesse
         if (this.inputDirection.lengthSquared() === 0 && supportInfo.averageSurfaceVelocity) {
