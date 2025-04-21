@@ -82,7 +82,7 @@ export default class FishingManager {
       if (this.insideTime >= this.targetTime) {
         const gain = 2;
         this.setEuros(this.getEuros() + gain);
-        this.toastFn(`+${gain} €`, 2000);
+        this.toastFn(`+${gain}  carrots`, 2000);
         this.hide();
         return;
       }
