@@ -17,6 +17,7 @@ let ground;
 let camera
 let finishMesh = null;
 let importedMeshes = []; // Tableau pour stocker les meshes importés
+let movingPlatforms = []; // Tableau pour stocker les plateformes en mouvement
 
 globalThis.HK = await HavokPhysics();
 
@@ -299,20 +300,35 @@ function createMovingPlatform(scene, p_from, p_to, speed = 2) {
     const direction = p_to.subtract(p_from).normalize();
     let time = 0;
 
-    scene.onBeforeRenderObservable.add(() => {
+    const update = () => {
       const dt = scene.getEngine().getDeltaTime() * 0.001;
       time += dt;
-
+    
       const alpha = (Math.sin(time * speed) + 1) / 2;
       const newPos = BABYLON.Vector3.Lerp(p_from, p_to, alpha);
       const prevPos = platform.position.clone();
-
+    
       aggregate.body.setTargetTransform(newPos, platform.rotationQuaternion ?? BABYLON.Quaternion.Identity());
-
+    
       // Calcul manuel de la vélocité
       platform.userVelocity = newPos.subtract(prevPos).scale(1 / dt);
-    });
+    };
+    
+    const observer = scene.onBeforeRenderObservable.add(update);
+    
+    // Stocke la plateforme et l'observer
+    movingPlatforms.push({ platform, observer });
   });
+}
+
+function clearMovingPlatforms(scene) {
+  for (const { platform, observer } of movingPlatforms) {
+    // Supprime l'observable
+    scene.onBeforeRenderObservable.remove(observer);
+    // Supprime le mesh et les ressources liées
+    platform.dispose();
+  }
+  movingPlatforms.length = 0; // Vide la liste
 }
 
 function createChest(x, y, z, chestId) {
@@ -520,9 +536,9 @@ function createGamblingTable (x,y,z) {
 function createGround(scene, level) {
 
   // Supprime les meshes importés précédemment
-  console.log(importedMeshes);
   if (importedMeshes.length > 0) {
       importedMeshes.forEach(mesh => mesh.dispose());
+      clearMovingPlatforms(scene); // Supprime les plateformes en mouvement
       importedMeshes = []; // Réinitialise le tableau
   }
 
@@ -531,11 +547,10 @@ function createGround(scene, level) {
 
 
         BABYLON.SceneLoader.ImportMesh("", "images/", "grass.glb", scene, function (grassMeshes) {
-          importedMeshes.concat(grassMeshes);
+          importedMeshes = importedMeshes.concat(grassMeshes);
         });
           // Stocke les meshes importés
-          importedMeshes.concat(meshes);
-          console.log("importedMeshes :", importedMeshes);
+          importedMeshes = importedMeshes.concat(meshes);
           // Affectez chaque mesh importé au parent et activez les collisions
           meshes.forEach((mesh) => {
               mesh.checkCollisions = true;
