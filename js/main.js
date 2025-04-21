@@ -17,6 +17,7 @@ let ground;
 let camera
 let finishMesh = null;
 
+
 globalThis.HK = await HavokPhysics();
 
 
@@ -216,7 +217,7 @@ async function startGame() {
       if (insuranceBought && !insuranceUsed) {
         // utilisation de l’assurance‑vie
         insuranceUsed = true;
-        player.mesh.position.copyFrom(spawnPosition);
+        player.reset_position(scene);
         showToast("Votre assurance‑vie vous ramène au spawn !", 3000);
         // accordez 1 s d’invulnérabilité pour éviter d’enchainer sur un autre kill immédiat
         invulnerable = true;
@@ -261,19 +262,74 @@ async function startGame() {
   });
 }
 
-function createMovingPlatform(scene, pathPoints, speed = 0.02) {
-  // 1. Charge ton plat.glb
+function createMovingPlatform(scene, p_from, p_to, speed = 2) {
+
+
   BABYLON.SceneLoader.ImportMesh("", "images/", "plat.glb", scene, (meshes) => {
-    const platform = meshes[0]; 
-    meshes.forEach(m => {
-      m.checkCollisions = true; // collisions avec le sol
-      m.receiveShadows = true;  // ombres
-      if (!(m.name == "__root__")) {
-        new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
-      }
+    if (!meshes || !Array.isArray(meshes) || meshes.length === 0) {
+      console.error("Aucun mesh trouvé dans le fichier plat.glb.");
+      return;
+    }
+
+    // Filtrage des meshes valides (certains fichiers glb incluent des nodes vides ou transform nodes)
+    const validMeshes = meshes.filter(mesh => mesh instanceof BABYLON.Mesh && mesh.geometry);
+    if (validMeshes.length === 0) {
+      console.error("Aucun mesh visible à fusionner dans plat.glb.");
+      return;
+    }
+
+    const platform = BABYLON.Mesh.MergeMeshes(validMeshes, true, true, undefined, false, true);
+    if (!platform) {
+      console.error("Échec de la fusion des meshes de la plateforme.");
+      return;
+    }
+
+    platform.name = "movingPlatform";
+    platform.position = p_from.clone();
+    platform.userVelocity = BABYLON.Vector3.Zero(); // <-- Stockage de vitesse personnalisée
+
+    const aggregate = new BABYLON.PhysicsAggregate(
+      platform,
+      BABYLON.PhysicsShapeType.BOX,
+      { mass: 0 }, // Static / animé
+      scene
+    );
+    aggregate.body.setMotionType(BABYLON.PhysicsMotionType.ANIMATED);
+
+    const direction = p_to.subtract(p_from).normalize();
+    let time = 0;
+
+    scene.onBeforeRenderObservable.add(() => {
+      const dt = scene.getEngine().getDeltaTime() * 0.001;
+      time += dt;
+
+      const alpha = (Math.sin(time * speed) + 1) / 2;
+      const newPos = BABYLON.Vector3.Lerp(p_from, p_to, alpha);
+      const prevPos = platform.position.clone();
+
+      aggregate.body.setTargetTransform(newPos, platform.rotationQuaternion ?? BABYLON.Quaternion.Identity());
+
+      // Calcul manuel de la vélocité
+      platform.userVelocity = newPos.subtract(prevPos).scale(1 / dt);
     });
-    platform.checkCollisions = true;
-    
+  });
+    /*
+    var platform = meshes[1];
+
+    var platformAggregate = new BABYLON.PhysicsAggregate(platform, BABYLON.PhysicsShapeType.MESH, { mass: 0 , restitution: 0.3 , friction: 10 });
+    platformAggregate.body.setMotionType(BABYLON.PhysicsMotionType.ANIMATED);
+
+    let timer = 0; // Timer pour la plateforme animée
+    let xPos = platform.position.x; // Position initiale de la plateforme
+    scene.onBeforeRenderObservable.add(() => {
+      const delta = engine.getDeltaTime() * 0.001;
+      timer += delta;
+      xPos = 2 * Math.sin(timer * 0.5)
+      platform.physicsBody.setTargetTransform(new BABYLON.Vector3(xPos, 1, 2), new BABYLON.Quaternion());
+  });
+
+
+/*
     platform.receiveShadows = true;
     platform.position = pathPoints[0].clone(); // position initiale
     platform.scaling = new BABYLON.Vector3(3, 3, 3); // Ajuste la taille de la plateforme
@@ -311,8 +367,8 @@ function createMovingPlatform(scene, pathPoints, speed = 0.02) {
     platform.animations = [animation];
 
     // 5. Lance-la en boucle
-    scene.beginAnimation(platform, 0, totalFrames, true, speed);
-  });
+    scene.beginAnimation(platform, 0, totalFrames, true, speed);*/
+  
 }
 
 function createChest(x, y, z, chestId) {
@@ -345,7 +401,7 @@ function createScene() {
   // Instanciez d'abord le player
   player = new Player(scene);
   
-  spawnPosition = player.mesh.position.clone();   // point d’apparition
+  spawnPosition = new BABYLON.Vector3(0, 10, 0);   // point d’apparition
 
 
 
@@ -396,7 +452,6 @@ function createScene() {
 
   scene.onBeforeRenderObservable.add((scene) => {
     player.mesh.position.copyFrom(player.controller.getPosition());
-
     // camera following
     var cameraDirection = camera.getDirection(new BABYLON.Vector3(0,0,1));
     cameraDirection.y = 0;
@@ -418,6 +473,10 @@ function createScene() {
 
     let down = new BABYLON.Vector3(0, -1, 0);
     let support = player.controller.checkSupport(dt, down);
+    console.log("Supported state:", support.supportedState);
+    console.log("Average normal:", support.averageSurfaceNormal.toString());
+    console.log("Average velocity:", support.averageSurfaceVelocity.toString());
+    console.log("Supported Mesh:", support.supportedMesh?.name ?? "none");
 
     BABYLON.Quaternion.FromEulerAnglesToRef(0, camera.rotation.y, 0, player.orientation);
     let desiredLinearVelocity = player.getDesiredVelocity(dt, support, player.controller.getVelocity());
@@ -465,7 +524,12 @@ function createGamblingTable (x,y,z) {
         
             // Activer les collisions pour la table
             gamblingTableMesh.checkCollisions = true;
-            new BABYLON.PhysicsAggregate(gamblingTableMesh, BABYLON.PhysicsShapeType.MESH);
+            meshes.forEach(m => {
+              m.receiveShadows = true;  // ombres
+              if (!(m.name == "__root__")) {
+                new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
+              }
+            });
 
             //zone de la table
             miniGameTriggerZone = BABYLON.MeshBuilder.CreateBox("miniZone", { size: 3 }, scene);
@@ -515,6 +579,7 @@ function createGamblingTable (x,y,z) {
 
 let importedMeshes = []; // Tableau pour stocker les meshes importés
 function createGround(scene, level) {
+
   // Supprime les meshes importés précédemment
   if (importedMeshes.length > 0) {
       importedMeshes.forEach(mesh => mesh.dispose());
@@ -523,16 +588,13 @@ function createGround(scene, level) {
 
   if (level === 1) {
       BABYLON.SceneLoader.ImportMesh("", "images/", "niveau1.glb", scene, function (meshes) {
+
+
+        BABYLON.SceneLoader.ImportMesh("", "images/", "grass.glb", scene, function (grassMeshes) {
+          
+        });
           // Stocke les meshes importés
           importedMeshes = meshes;
-
-          // Créez un mesh parent pour regrouper tous les meshes importés
-          let groundParent = new BABYLON.Mesh("groundParent", scene);
-
-          // Après avoir importé et parenté vos meshes de ground :
-          groundParent.getChildMeshes().forEach(mesh => {
-            mesh.receiveShadows = true;
-          });
 
           // Affectez chaque mesh importé au parent et activez les collisions
           meshes.forEach((mesh) => {
@@ -543,11 +605,6 @@ function createGround(scene, level) {
               }
 
           });
-
-          // Ajustez la position et l'échelle selon vos besoins
-          groundParent.position = new BABYLON.Vector3(0, 0, 0);
-          groundParent.scaling = new BABYLON.Vector3(1, 1, 1);
-
           const spawnPositions = [
               new BABYLON.Vector3(36, 2, -11),
               new BABYLON.Vector3(-20, 3, 13),
@@ -571,13 +628,10 @@ function createGround(scene, level) {
 
 
           // 1) Crée tes plateformes statiques à partir de plat.glb
-          const path1 = [
-            new BABYLON.Vector3(0, 2, 0),
-            new BABYLON.Vector3(10, 2, 0),
-            new BABYLON.Vector3(10, 2, 10),
-            new BABYLON.Vector3(0, 2, 10),
-          ];
-          createMovingPlatform(scene, path1, /* speed */ 0.5);
+          
+          const p1_from = new BABYLON.Vector3(0, 2, 0);
+          const p1_to   = new BABYLON.Vector3(10, 5, 10);
+          createMovingPlatform(scene, p1_from, p1_to, 0.8);
 
           
           BABYLON.SceneLoader.ImportMesh("", "images/", "pond.glb", scene, (meshes) => {
@@ -634,24 +688,19 @@ function createGround(scene, level) {
       });
       return null;
   } else if (level === 2) {
-      BABYLON.SceneLoader.ImportMesh("", "images/", "level2.glb", scene, function (meshes) {
+      BABYLON.SceneLoader.ImportMesh("", "images/", "niveau1.glb", scene, function (meshes) {
           // Stocke les meshes importés
           importedMeshes = meshes;
 
-          // Créez un mesh parent pour regrouper tous les meshes importés
-          let groundParent = new BABYLON.Mesh("groundParent", scene);
-
           // Affectez chaque mesh importé au parent et activez les collisions
           meshes.forEach((mesh) => {
+              mesh.checkCollisions = true;
+              mesh.isPickable = false; 
               if (!(mesh.name == "__root__")) {
                 new BABYLON.PhysicsAggregate(mesh, BABYLON.PhysicsShapeType.MESH);
               }
+
           });
-
-          // Ajustez la position et l'échelle selon vos besoins
-          groundParent.position = new BABYLON.Vector3(0, 0, 0);
-          groundParent.scaling = new BABYLON.Vector3(1, 1, 1);
-
           const spawnPositions = [
               new BABYLON.Vector3(36, 2, -11),
               new BABYLON.Vector3(-20, 3, 13),
@@ -662,9 +711,9 @@ function createGround(scene, level) {
 
           orbsManager.createOrbsAtPositions(spawnPositions);
 
-          console.log("Map t3.glb chargée et ajustée pour le niveau 2");
+          console.log("Map t.glb chargée et ajustée pour le niveau 1");
 
-          finishMesh.position.set(59.58, 19.15, -129);  // <-- coordonnées fixes
+          createFinishPoint(6.6, 3.7, -82); // <-- coordonnées fixes
 
 
           // GESTION DES ENNEMIS
@@ -791,6 +840,9 @@ function modifySettings() {
       case " ":
         inputStates.jump++;
         player.wantJump ++;
+        break;
+      case "r":
+        player.reset_position(scene);
         break;
       case "e":
         inputStates.interact = true;
@@ -1075,8 +1127,6 @@ function handlePlayerDeath( counter) {
   playerDead = true;
   gamePaused = true;            // stoppe IA, déplacements, etc.
 
-  // masque le mesh + collisions
-  player.mesh.checkCollisions = false;
 
   // UI
   const deathScreen   = document.getElementById("deathScreen");
@@ -1115,8 +1165,7 @@ function showToast(message, duration = 2000) {
 
 function respawnPlayer() {
   // remet le lapin à son spawn
-  player.mesh.position.copyFrom(spawnPosition);
-  player.mesh.checkCollisions  = true;
+  player.reset_position(scene);
 
   // cache l’UI
   document.getElementById("deathScreen").style.display = "none";
@@ -1203,23 +1252,21 @@ function nextLevel() {
     // Réinitialise le manager d'orbes pour le nouveau niveau
     orbsManager = new OrbsManager(scene);
 
-    // Réinitialiser la position du joueur à son point de départ
-    player.mesh.position = new BABYLON.Vector3(0, 3, 0);
-    spawnPosition = player.mesh.position.clone();
-
     // Désactive temporairement les collisions pour l'invulnérabilité
     invulnerable = true;
     setTimeout(() => {
       invulnerable = false;
+      player.reset_position(scene);
     }, 1000);  // 2 secondes d'invulnérabilité
 
     gamePaused = false;
     startTimer();
     canvas.requestPointerLock();
     console.log("Niveau", currentLevel, "lancé");
+    // Réinitialiser la position du joueur à son point de départ
+    
   } else {
     alert("Félicitations, vous avez terminé les niveaux");
     engine.stopRenderLoop();
   }
 }
-
