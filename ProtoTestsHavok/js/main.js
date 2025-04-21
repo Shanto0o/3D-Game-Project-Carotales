@@ -23,7 +23,6 @@ globalThis.HK = await HavokPhysics();
 
 
 
-
 let timeLeft = 200; // Temps en secondes par niveau
 let timerInterval;
 let gamePaused = false;
@@ -150,6 +149,7 @@ async function startGame() {
  
 
   startTimer();
+  
 
   engine.runRenderLoop(() => {
     if (gamePaused) {
@@ -163,7 +163,6 @@ async function startGame() {
 
       
 
-
     // Vérification des collisions avec les orbes
     orbsManager.checkCollisions(player, () => {
       const baseGain = 5;
@@ -175,11 +174,6 @@ async function startGame() {
       document.getElementById("timer").textContent = timeLeft;
     });
 
-    // mise à jour des ennemis
-    if (currentLevel >= 2) {
-      enemiesManager.updateAll(player);
-    }
-
     // Arrivée au point de fin → terminer le niveau
     if (finishMesh) {
       const dist = BABYLON.Vector3.Distance(player.mesh.position, finishMesh.position);
@@ -190,60 +184,41 @@ async function startGame() {
 
     updateEurosUI();
 
+
+    let nearInteract = false;
+
     chests.forEach(({ mesh, id }) => {
       if (chestOpened[id]) return;  // déjà ouvert
       const d = BABYLON.Vector3.Distance(player.mesh.position, mesh.position);
       if (d < 3) {
-        promptDiv.style.display = "block";
+        nearInteract = true;
+        promptDiv.textContent = "Press E to open chest";
         if (inputStates.interact) {
           euros += 15;
           updateEurosUI();
           chestOpened[id] = true;
+          showToast(`+15 carrots`, 1500);
           mesh.dispose();
-          promptDiv.style.display = "none";
         }
       }
     });
 
-    // Vérification des collisions avec les ennemis
-    if (!playerDead && !invulnerable && currentLevel >= 2) {
-      enemiesManager.enemies.forEach(enemy => {
-        if (enemy.mesh.intersectsMesh(player.mesh, false)) {
-          handlePlayerDeath(5);
-        }
-      });
-    }
-
-    if (!playerDead && !invulnerable && player.mesh.position.y < -50) {
-      if (insuranceBought && !insuranceUsed) {
-        // utilisation de l’assurance‑vie
-        insuranceUsed = true;
-        player.reset_position(scene);
-        showToast("Votre assurance‑vie vous ramène au spawn !", 3000);
-        // accordez 1 s d’invulnérabilité pour éviter d’enchainer sur un autre kill immédiat
-        invulnerable = true;
-        setTimeout(() => invulnerable = false, 1000);
-      } else {
-        handlePlayerDeath(10);
-      }
-    }
 
 
     // —— mini‑jeu de pêche par distance ——
     if (pondPosition && !fishingManager.isFishing) {
       const d = BABYLON.Vector3.Distance(player.mesh.position, pondPosition);
       if (d < 22) {
+        promptDiv.textContent = "Press E to fish";
         // on est proche du pond
-        promptDiv.textContent = "Appuyez sur E pour pêcher";
-        promptDiv.style.display = "block";
+        nearInteract = true;
         if (inputStates.interact) {
           fishingManager.show();
-          promptDiv.style.display = "none";
         }
-      } else {
-        promptDiv.style.display = "none";
       }
     }
+
+    promptDiv.style.display = nearInteract ? "block" : "none";
 
     scene.render();
   });
@@ -355,6 +330,38 @@ function createScene() {
   var gravityVector = new BABYLON.Vector3(0, -9.81, 0);
   const physicsPlugin = new BABYLON.HavokPlugin(false);
   scene.enablePhysics(gravityVector, physicsPlugin);
+
+  scene.onAfterPhysicsObservable.add(() => {
+    if (currentLevel >= 2) {
+      enemiesManager.updateAll(player);
+
+
+      // Vérification des collisions avec les ennemis
+    if (!playerDead && !invulnerable && currentLevel >= 2) {
+      enemiesManager.enemies.forEach(enemy => {
+        if (enemy.mesh.intersectsMesh(player.mesh, false)) {
+          handlePlayerDeath(5);
+        }
+      });
+    }
+  }
+
+    if (!playerDead && !invulnerable && player.mesh.position.y < -50) {
+      if (insuranceBought && !insuranceUsed) {
+        // utilisation de l’assurance‑vie
+        insuranceUsed = true;
+        player.reset_position(scene);
+        showToast("Votre assurance‑vie vous ramène au spawn !", 3000);
+        // accordez 1 s d’invulnérabilité pour éviter d’enchainer sur un autre kill immédiat
+        invulnerable = true;
+        setTimeout(() => invulnerable = false, 1000);
+      } else {
+        handlePlayerDeath(10);
+      }
+    }
+
+
+    });
   //scene.clearColor = new BABYLON.Color3(0.1, 0.1, 0.3);
   createLights(scene);
 
@@ -428,6 +435,11 @@ function createScene() {
     if (scene.deltaTime == undefined) return;
     let dt = scene.deltaTime / 1000.0;
     if (dt == 0) return;
+
+    // ← Si le joueur est en cours de « mort », on ne f ait rien
+    if (playerDead) {
+      return;
+    }
 
     player.move(inputStates, camera);
 
@@ -531,6 +543,58 @@ function createGamblingTable (x,y,z) {
         });
 }
 
+function createPond(x,y,z) {
+  BABYLON.SceneLoader.ImportMesh("", "images/", "pond.glb", scene, (meshes) => {
+    // On positionne le plan d'eau
+    meshes[0].position = new BABYLON.Vector3(x, y, z);
+    pondPosition = meshes[0].position.clone();
+    meshes.forEach(m => {
+      m.checkCollisions  = true;
+      m.receiveShadows   = true;
+      if (!(m.name == "__root__")) {
+        new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
+      }
+    });
+  
+    // Création de la hit‑box invisible
+    const pondZone = BABYLON.MeshBuilder.CreateBox("pondZone", { size: 1 }, scene);
+    pondZone.position        = meshes[0].position.clone();
+    pondZone.isVisible       = false;
+    pondZone.checkCollisions = false;   // <-- remet la détection d’intersection
+    pondZone.isPickable      = false;  // n’interfère pas pour les clics
+    // Empêche physiquement le blocage sans désactiver checkCollisions :
+    pondZone.ellipsoid       = new BABYLON.Vector3(0,0,0);
+    pondZone.ellipsoidOffset = new BABYLON.Vector3(0,0,0);
+
+    pondZone.actionManager   = new BABYLON.ActionManager(scene);
+    pondZone.actionManager.registerAction(
+      new BABYLON.ExecuteCodeAction(
+        { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: { mesh: player.mesh } },
+        () => {
+          showToast("Appuyez sur E pour pêcher", 2000);
+          window.addEventListener("keydown", onEnterFishing);
+        }
+      )
+    );
+    pondZone.actionManager.registerAction(
+      new BABYLON.ExecuteCodeAction(
+        { trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: { mesh: player.mesh } },
+        () => {
+          window.removeEventListener("keydown", onEnterFishing);
+        }
+      )
+    );
+  
+    function onEnterFishing(evt) {
+      if (evt.key.toLowerCase() === "e") {
+        document.exitPointerLock();
+        fishingManager.show();
+        window.removeEventListener("keydown", onEnterFishing);
+      }
+    }
+  });
+}
+
 
 
 function createGround(scene, level) {
@@ -588,56 +652,10 @@ function createGround(scene, level) {
           const p1_to   = new BABYLON.Vector3(150, 55, 28);
           createMovingPlatform(scene, p1_from, p1_to, 0.8);
 
-          
-          BABYLON.SceneLoader.ImportMesh("", "images/", "pond.glb", scene, (meshes) => {
-            // On positionne le plan d'eau
-            meshes[0].position = new BABYLON.Vector3(66, 0, -130);
-            pondPosition = meshes[0].position.clone();
-            meshes.forEach(m => {
-              m.checkCollisions  = true;
-              m.receiveShadows   = true;
-              if (!(m.name == "__root__")) {
-                new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
-              }
-            });
-          
-            // Création de la hit‑box invisible
-            const pondZone = BABYLON.MeshBuilder.CreateBox("pondZone", { size: 1 }, scene);
-            pondZone.position        = meshes[0].position.clone();
-            pondZone.isVisible       = false;
-            pondZone.checkCollisions = false;   // <-- remet la détection d’intersection
-            pondZone.isPickable      = false;  // n’interfère pas pour les clics
-            // Empêche physiquement le blocage sans désactiver checkCollisions :
-            pondZone.ellipsoid       = new BABYLON.Vector3(0,0,0);
-            pondZone.ellipsoidOffset = new BABYLON.Vector3(0,0,0);
+          createPond(66, 0, -130);
 
-            pondZone.actionManager   = new BABYLON.ActionManager(scene);
-            pondZone.actionManager.registerAction(
-              new BABYLON.ExecuteCodeAction(
-                { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: { mesh: player.mesh } },
-                () => {
-                  showToast("Appuyez sur E pour pêcher", 2000);
-                  window.addEventListener("keydown", onEnterFishing);
-                }
-              )
-            );
-            pondZone.actionManager.registerAction(
-              new BABYLON.ExecuteCodeAction(
-                { trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: { mesh: player.mesh } },
-                () => {
-                  window.removeEventListener("keydown", onEnterFishing);
-                }
-              )
-            );
           
-            function onEnterFishing(evt) {
-              if (evt.key.toLowerCase() === "e") {
-                document.exitPointerLock();
-                fishingManager.show();
-                window.removeEventListener("keydown", onEnterFishing);
-              }
-            }
-          });
+          
 
           
       });
@@ -689,7 +707,7 @@ function createGround(scene, level) {
           // on donne aussi speed et range à chaque ennemi si besoin
           const configs = paths.map(p => ({
             path: p,
-            speed: 0.12,
+            speed: 0.057,
             range: 15
           }));
           enemiesManager.createEnemies(configs);
@@ -705,6 +723,11 @@ function clearLevelObjects() {
   chests.forEach(({ mesh }) => mesh.dispose());
   chests.length = 0;
 
+  if (finishMesh) {
+    finishMesh.dispose();
+    finishMesh = null;
+  }
+
   if (gamblingTableMesh) {
     gamblingTableMesh.dispose();
     gamblingTableMesh = null;
@@ -718,6 +741,7 @@ function clearLevelObjects() {
     miniGameTriggerZone.dispose();
     miniGameTriggerZone = null;
   }
+
 
 }
 
@@ -775,7 +799,8 @@ function createThirdPersonCamera(scene, target) {
 function modifySettings() {
   window.addEventListener("keydown", (event) => {
     console.log("KeyDown:", event.key);
-    switch(event.key) {
+    let key = event.key.toLowerCase();
+    switch(key) {
       case "z":
       case "ArrowUp":
         inputStates.up = true;
@@ -797,39 +822,39 @@ function modifySettings() {
         player.wantJump ++;
         break;
       case "r":
-        player.reset_position(scene);
-        break;
-      case "e":
-        inputStates.interact = true;
-        break;
-      case "a":                            // <<< NEW
-        if (freezeBought && !freezeActive && !gamePaused){
-          if (freezeCooldown) {
-            const remaining = Math.ceil((freezeCooldownDuration - (Date.now() - lastFreezeTime)) / 1000);
-            showToast("GEL : En attente de recharge... " + remaining + "s restantes", 2500);
-            return;                             // pas de cooldown
-          } else {
-          triggerFreeze();
-          }
-        }
-      break;
-      case "r":
         if (!speedBought) {
-          showToast("Speed non débloqué !");
+          showToast("Speed non débloqué !", 2500);
         } else if (speedActive) {
-          showToast("Speed déjà actif !");
+          showToast("Speed déjà actif !", 2500);
         } else if (speedCooldown) {
-          // on ne fait rien, le cooldown est visible sur l’icône
+          const rem = Math.ceil((speedCooldownDuration - (Date.now() - lastSpeedTime)) / 1000);
+          showToast(`Speed en recharge : ${rem}s`, 2500);
         } else if (!gamePaused) {
           triggerSpeed();
         }
         break;
+      case "e":
+        inputStates.interact = true;
+        break;
+      case "a":
+        if (!freezeBought) {
+          showToast("Gel non débloqué !", 2500);
+        } else if (freezeActive) {
+          showToast("Gel déjà actif !", 2500);
+        } else if (freezeCooldown) {
+          const rem = Math.ceil((freezeCooldownDuration - (Date.now() - lastFreezeTime)) / 1000);
+          showToast(`Gel en recharge : ${rem}s`, 2500);
+        } else if (!gamePaused) {
+          triggerFreeze();
+        }
+        break;  
     }
   });
   
   window.addEventListener("keyup", (event) => {
     console.log("KeyUp:", event.key);
-    switch(event.key) {
+    let key = event.key.toLowerCase();
+    switch(key) {
       case "z":
       case "ArrowUp":
         inputStates.up = false;
@@ -866,6 +891,7 @@ function modifySettings() {
 }
 
 function startTimer() {
+  console.log("[DEBUG] startTimer() level", currentLevel, "timeLeft=", timeLeft);
   console.log("Timer démarré avec", timeLeft, "secondes");
   document.getElementById("timer").textContent = timeLeft;
   timerInterval = setInterval(() => {
@@ -924,8 +950,9 @@ function openShopInterface() {
 
 function closeShopInterface() {
   canvas.requestPointerLock();
-  document.getElementById("shopInterface").style.display = "none";
+  const shopInterface = document.getElementById("shopInterface");
   shopInterface.classList.remove("show");
+  shopInterface.style.display = "none";
 }
 
 
@@ -1025,29 +1052,27 @@ function triggerSpeed() {
   speedCooldown = true;
   lastSpeedTime = Date.now();
 
-  // change l’icône pour indiquer le cooldown
   update_skillicon("iconSpeed", "images/speed_cd.png");
   showToast("Speed activé ! 10 s");
 
-  // démarre le compteur visuel
-  startCooldown("iconSpeed");
-
   // applique le multiplicateur
-  player.currentSpeedMult = 1.4;
+  player.speedMult = 1.5;
 
   // fin de l’effet au bout de 10 s
   setTimeout(() => {
-    player.currentSpeedMult = 1;
+    player.speedMult = 1.0;
     speedActive = false;
   }, speedDuration);
 
-  // fin du cooldown après 60 s
+  startCooldown("iconSpeed");
+  // recharge …
   setTimeout(() => {
     speedCooldown = false;
     update_skillicon("iconSpeed", "images/speed.png");
     showToast("Speed prêt à être relancé !");
   }, speedCooldownDuration);
 }
+
 
 function buyCarrotLoverBonus() {
   if (euros >= 1) {
@@ -1121,6 +1146,7 @@ function showToast(message, duration = 2000) {
 function respawnPlayer() {
   // remet le lapin à son spawn
   player.reset_position(scene);
+  enemiesManager.resetAll();
 
   // cache l’UI
   document.getElementById("deathScreen").style.display = "none";
@@ -1189,11 +1215,27 @@ function startCooldown(iconId) {
 function nextLevel() {
   closeShopInterface();
   if (currentLevel < maxLevel) {
+
     currentLevel++;
     orbsTarget = currentLevel * 5;
     collectedOrbs = 0;
     timeLeft = 30;
     document.getElementById("timer").textContent = timeLeft;
+
+     // 1) On replace immédiatement le joueur au spawn
+     player.reset_position(scene);
+
+     // 2) Puis on (ré‑)initialise invulnérabilité si besoin
+     invulnerable = true;
+     setTimeout(() => invulnerable = false, 1000);
+
+
+    console.log("[DEBUG] nextLevel() début, gamePaused=", gamePaused);
+    gamePaused = false;
+    console.log("[DEBUG] nextLevel() après unpause, gamePaused=", gamePaused);
+
+    clearInterval(timerInterval);
+    startTimer();
 
     // Dispose les objets spécifiques du niveau précédent (coffre, table...)
     clearLevelObjects();
@@ -1201,21 +1243,14 @@ function nextLevel() {
     // Dispose les orbes du niveau précédent
     orbsManager.orbs.forEach(orb => orb.dispose());
 
-    // Charge le nouveau niveau
-    ground = createGround(scene, currentLevel);
-
     // Réinitialise le manager d'orbes pour le nouveau niveau
     orbsManager = new OrbsManager(scene);
 
-    // Désactive temporairement les collisions pour l'invulnérabilité
-    invulnerable = true;
-    setTimeout(() => {
-      invulnerable = false;
-      player.reset_position(scene);
-    }, 1000);  // 2 secondes d'invulnérabilité
+    // Charge le nouveau niveau
+    ground = createGround(scene, currentLevel);
 
-    gamePaused = false;
-    startTimer();
+
+
     canvas.requestPointerLock();
     console.log("Niveau", currentLevel, "lancé");
     // Réinitialiser la position du joueur à son point de départ
