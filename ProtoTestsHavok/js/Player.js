@@ -10,7 +10,7 @@ export default class Player {
     this.speedMult = 1.0;    // ← nouveau
 
 
-    this.debugFly = false;  // ← nouveau
+    this.debugFly = true;  // ← nouveau
    
     this.controller = new BABYLON.PhysicsCharacterController(this.mesh.position, {capsuleHeight: 2, capsuleRadius: 0.5}, scene);
     this.orientation = BABYLON.Quaternion.Identity();
