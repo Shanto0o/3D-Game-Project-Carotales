@@ -1265,8 +1265,8 @@ function closeShopInterface() {
 
 
 function buyRangeBonus() {
-  if (euros >= 1) {
-    euros -= 1;
+  if (euros >= 10) {
+    euros -= 10;
     audioManager.play("purchase");
     currentRangeMult += 0.2; // Augmente la portée de ramassage de 0.2
     player.pickupBox.scaling = player.pickupBox.scaling.multiplyByFloats(currentRangeMult, currentRangeMult, currentRangeMult);
@@ -1281,8 +1281,8 @@ function buyRangeBonus() {
 
 function buyFreezeBonus(){
   if (freezeBought){ showToast("Already bought!"); return; }
-  if (euros>=1){
-    euros -= 1;
+  if (euros>=25){
+    euros -= 25;
     audioManager.play("purchase");
     freezeBought = true;
     addSkillIcon("iconFreeze","images/gel.png",freezeCooldownDuration);   // <<< NEW icône
@@ -1330,8 +1330,8 @@ function triggerFreeze() {
 
 function donateBonus() {
   console.log("donateBonus invoked – euros =", euros);
-  if (euros >= 1) {
-    euros -= 1;
+  if (euros >= 10) {
+    euros -= 10;
     audioManager.play("purchase");
     updateEurosUI();
     showToast("Thanks for your generosity ! Your donation is heartwhelming !", 3000);
@@ -1345,8 +1345,8 @@ function buySpeedBonus() {
     showToast("Already bought !");
     return;
   }
-  if (euros >= 1) {
-    euros    -= 1;
+  if (euros >= 25) {
+    euros    -= 25;
     audioManager.play("purchase");
     speedBought = true;
     // ajoute l’icône avec son cooldown
@@ -1441,8 +1441,8 @@ function triggerSpeed() {
 
 
 function buyCarrotLoverBonus() {
-  if (euros >= 1) {
-    euros -= 1;
+  if (euros >= 15) {
+    euros -= 15;
     audioManager.play("purchase");
     carrotLoverStacks++;
     updateEurosUI();
@@ -1457,8 +1457,8 @@ function buyInsuranceBonus() {
     showToast("Already bought !");
     return;
   }
-  if (euros >= 1) {
-    euros -= 1;
+  if (euros >= 20) {
+    euros -= 20;
     audioManager.play("purchase");
     insuranceBought = true;
     updateEurosUI();
