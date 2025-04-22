@@ -40,7 +40,7 @@ let invulnerable = false;  // invulnérabilité temporaire après respawn
 
 // Système de niveaux
 let currentLevel = 1;
-const maxLevel = 10;
+const maxLevel = 3;
 let orbsTarget = currentLevel * 5; // Exemple : niveau 1 = 5 orbes, niveau 2 = 10, etc.
 let collectedOrbs = 0; // Compteur d'orbes collectées 
 
@@ -913,32 +913,42 @@ function createGround(scene, level) {
 
           });
           const spawnPositions = [
-              new BABYLON.Vector3(36, 2, -11),
-              new BABYLON.Vector3(-20, 3, 13),
-              new BABYLON.Vector3(-1, 3, 44),
-              new BABYLON.Vector3(38, 3, -5),
-              new BABYLON.Vector3(20, 3, -38),
+              new BABYLON.Vector3(6,10   ,58 ),
+              new BABYLON.Vector3(-33,20 ,95 ),
+              new BABYLON.Vector3(-96,23 , 184),
+              new BABYLON.Vector3(-116,28 ,164 ),
+              new BABYLON.Vector3(-120,30 ,134 ),
+              new BABYLON.Vector3(-116,34 ,107 ),
+
           ];
 
           orbsManager.createOrbsAtPositions(spawnPositions);
 
           console.log("Map t.glb chargée et ajustée pour le niveau 1");
 
-          createFinishPoint(6.6, 3.7, -82); // <-- coordonnées fixes
+          createChest( -93, 31, 100,  `lvl1_chest1` );
+          createChest( -94, 31, 111,  `lvl1_chest1` );
+
+          createFinishPoint(-67, 60, -136); // <-- coordonnées fixes
+        createGamblingTable (-55,57,-147);
 
 
           // GESTION DES ENNEMIS
 
           const paths = [
             [
-              new BABYLON.Vector3(9.45, 1, 34.24 ),
-              new BABYLON.Vector3(24.48, 1, 1.55),
+              new BABYLON.Vector3(-80, 20 , 120 ),
+              new BABYLON.Vector3(-22, 18, 133),
           
 
             ],
             [
-              new BABYLON.Vector3(9.45, 1, -29.9 ),
-              new BABYLON.Vector3(-35.5, 1, -9.66),
+              new BABYLON.Vector3(-41, 17, 170 ),
+              new BABYLON.Vector3(-85, 19, 124),
+            ],
+            [
+              new BABYLON.Vector3(46, 15, -120 ),
+              new BABYLON.Vector3(50, 16, -237),
             ]
           ];
           
