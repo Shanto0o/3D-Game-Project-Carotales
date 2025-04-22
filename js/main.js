@@ -689,8 +689,8 @@ function createGamblingTable (x,y,z) {
           // Charger le modèle gamblingtable.glb
           BABYLON.SceneLoader.ImportMesh("", "images/", "gamblingtable.glb", scene, (meshes) => {
             gamblingTableMesh = meshes[0]; // On suppose que le premier mesh est la table
-            gamblingTableMesh.position = new BABYLON.Vector3(x, y, z); // Ajustez les coordonnées
-            gamblingTableMesh.scaling = new BABYLON.Vector3(4, 4, 4); // Ajustez l'échelle si nécessaire
+            gamblingTableMesh.position = new BABYLON.Vector3(x, y+0.8, z); // Ajustez les coordonnées
+            gamblingTableMesh.scaling = new BABYLON.Vector3(0.8, 0.8, 0.8); // Ajustez l'échelle si nécessaire
 
             gamblingTableMesh.receiveShadows = true;
             gamblingTableMesh.isVisible = true;
@@ -704,17 +704,10 @@ function createGamblingTable (x,y,z) {
               }
             });
 
-            //zone de la table
-            miniGameTriggerZone = BABYLON.MeshBuilder.CreateBox("miniZone", { size: 3 }, scene);
-            miniGameTriggerZone.position = gamblingTableMesh.position.clone(); // Placez le cube au même endroit que la table
-            miniGameTriggerZone.isVisible = false; // Rendre le cube invisible (ou semi-transparent si nécessaire)
-            miniGameTriggerZone.checkCollisions = true; // Activer les collisions pour la zone
-            new BABYLON.PhysicsAggregate(miniGameTriggerZone, BABYLON.PhysicsShapeType.MESH);
-
             // Créer une zone en cube autour de la table pour gérer les interactions
             miniGameZone = BABYLON.MeshBuilder.CreateBox("miniZone", { size: 6 }, scene);
             miniGameZone.position = gamblingTableMesh.position.clone(); // Placez le cube au même endroit que la table
-            miniGameZone.isVisible = true; // Rendre le cube invisible (ou semi-transparent si nécessaire)
+            miniGameZone.isVisible = false; // Rendre le cube invisible (ou semi-transparent si nécessaire)
         
             // Si vous voulez rendre le cube semi-transparent pour le débogage :
             const matZone = new BABYLON.StandardMaterial("zoneMat", scene);
