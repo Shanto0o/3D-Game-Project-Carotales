@@ -34,7 +34,7 @@ export default class MiniGameManager {
     }
   
     updatePlaysDisplay() {
-      this.playBtn.textContent = `Lancer les dés (${this.playsLeft} essais restants)`;
+      this.playBtn.textContent = `Roll the dice: (${this.playsLeft} attempts left)`;
       this.playBtn.disabled   = this.playsLeft <= 0;
     }
   
@@ -53,12 +53,12 @@ export default class MiniGameManager {
   
     playDice() {
       if (this.playsLeft <= 0) {
-        this.textResult.textContent = "Plus de lancers disponibles.";
+        this.textResult.textContent = "No more attempts left!";
         return;
       }
       const euros = this.getEuros();
       if (euros < 10) {
-        this.textResult.textContent = "Pas assez d'euros !";
+        this.textResult.textContent = "Not enough carrots !";
         return;
       }
       this.playsLeft--;
@@ -66,7 +66,7 @@ export default class MiniGameManager {
   
       // désactiver le bouton pendant l'animation
       this.playBtn.disabled = true;
-      this.textResult.textContent = "Lancement des dés...";
+      this.textResult.textContent = "Rolling the dice...";
       this.am.play("dice");
   
       let frames = 0;
@@ -112,8 +112,8 @@ export default class MiniGameManager {
   
       // affichage du texte résultat
       this.textResult.innerHTML =
-        `Résultat : ${d1} + ${d2} = ${sum}<br>` +
-        `Vous ${gain > 0 ? "gagnez" : "perdez"} ${gain} €`;
+        `Results: ${d1} + ${d2} = ${sum}<br>` +
+        `You ${gain > 0 ? "won" : "lose"} ${gain} €`;
   
       // réactiver le bouton si des essais restent
       this.playBtn.disabled = this.playsLeft <= 0;
