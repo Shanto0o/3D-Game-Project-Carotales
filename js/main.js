@@ -1595,6 +1595,7 @@ function nextLevel() {
      invulnerable = true;
      setTimeout(() => invulnerable = false, 1000);
 
+    miniGameManager.resetPlays();
 
     console.log("[DEBUG] nextLevel() début, gamePaused=", gamePaused);
     gamePaused = false;
