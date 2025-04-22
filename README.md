@@ -23,7 +23,7 @@ L'objectif principal est de passer au niveau suivant dans le temps imparti tout 
   - "q" : Aller à gauche.
   - "s" : Aller en arrière.
   - "d" : Aller à droite.
-  - Espace : Sauter (ou faire monter la barre dans la pêche).
+  - Espace : Sauter.
   - "e" : Intéragir avec les mini-jeux.
   - "a" : Utiliser l'amélioration pour freeze les ennemis.
   - "r" : Speedboost.
