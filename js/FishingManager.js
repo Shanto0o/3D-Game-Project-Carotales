@@ -1,10 +1,5 @@
-// js/FishingManager.js
 export default class FishingManager {
-  /**
-   * @param {() => number} getEuros
-   * @param {(n: number) => void} setEuros
-   * @param {(msg: string, duration?: number) => void} toastFn
-   */
+
   constructor(getEuros, setEuros, toastFn) {
     this.getEuros    = getEuros;
     this.setEuros    = setEuros;
@@ -38,7 +33,6 @@ export default class FishingManager {
     this.lastTs     = performance.now();
 
     this.handle.style.bottom = "0%";
-    // timer initial
     this.timerEl.textContent = `Red Zone Timer : ${this.targetTime} s remaining`;
 
     this.interface.style.display = "flex";
@@ -66,15 +60,12 @@ export default class FishingManager {
     const dt = (ts - this.lastTs) / 1000;
     this.lastTs = ts;
 
-    // descente
     this.pos = Math.max(0, this.pos - this.downSpeed * dt);
     this.handle.style.bottom = `${this.pos * 100}%`;
 
-    // mise à jour du timer
     const remaining = Math.max(0, Math.ceil(this.targetTime - this.insideTime));
     this.timerEl.textContent = `Red Zone Timer : ${remaining} s remaining`;
 
-    // détection zone rouge
     const barRect = this.bar.getBoundingClientRect();
     const redRect = this.redZone.getBoundingClientRect();
     const handleY = barRect.bottom - this.pos * barRect.height;
@@ -83,7 +74,7 @@ export default class FishingManager {
       this.insideTime += dt;
 
       if (this.insideTime >= this.targetTime) {
-        // 10% chance de rare loot à 25 €
+        // 10% chance de rare loot à 25 carottes
         let gain;
         if (Math.random() < 0.4) {
           this.am.play("fish");
