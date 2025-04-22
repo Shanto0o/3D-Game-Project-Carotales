@@ -12,6 +12,7 @@ export default class MiniGameManager {
       this.setEuros  = setEuros;
       this.maxPlays  = 3;
       this.playsLeft = this.maxPlays;
+      this.am = null;
   
       // Crée les éléments <img> pour les dés
       this.img1 = document.createElement('img');
@@ -66,6 +67,7 @@ export default class MiniGameManager {
       // désactiver le bouton pendant l'animation
       this.playBtn.disabled = true;
       this.textResult.textContent = "Lancement des dés...";
+      this.am.play("dice");
   
       let frames = 0;
       const anim = setInterval(() => {
@@ -92,10 +94,14 @@ export default class MiniGameManager {
       const d2 = Math.floor(Math.random() * 6) + 1;
       const sum = d1 + d2;
       let gain = 0;
-      if (d1 === d2 === 6)      gain = 50;
-      else if (sum >= 10)  gain = 20;
-      else if (sum >= 5)  gain = 8;
-      else gain -= 7;
+      if (d1 === d2 === 6)      {gain = 50;
+      this.am.play("fish");}
+      else if (sum >= 10)  {gain = 20;
+      this.am.play("fishnorm");}
+      else if (sum >= 5)  {gain = 8;
+        this.am.play("fishnorm");}
+      else {gain -= 7;
+      this.am.play("fail");}
       // afficher les vraies faces
       this.img1.src = `images/dice${d1}.png`;
       this.img2.src = `images/dice${d2}.png`;
