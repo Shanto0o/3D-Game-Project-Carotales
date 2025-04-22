@@ -255,6 +255,7 @@ async function startGame() {
     audioManager.load("dice", "images/dice.wav"),
     audioManager.load("fail", "images/fail.wav"),
     audioManager.load("chest", "images/chest.mp3"),
+    audioManager.load("horn", "images/horn.wav"),
 
   ]);
 
@@ -600,7 +601,7 @@ function createFinishPoint(x , y, z) {
   finishMesh = BABYLON.MeshBuilder.CreateBox("finish", { size: 2 }, scene);
   shopPosition = finishMesh.position.clone();
   finishMesh.position.set(x, y, z);
-  finishMesh.isVisible = true;
+  finishMesh.isVisible = false;
   finishMesh.checkCollisions = true;
 
   BABYLON.SceneLoader.ImportMesh("", "images/", "finish.glb", scene, (meshes) => {
@@ -1453,6 +1454,53 @@ function startCooldown(iconId) {
   }, 1000);
 }
 
+function showEndScreen() {
+  // 1) Récupère et rattache l'overlay en dernier
+  const end = document.getElementById('endScreen');
+  if (!end) return;
+  end.remove();
+  document.body.appendChild(end);
+
+  document.exitPointerLock();
+  audioManager.play("horn");
+  // 2) Affiche l'overlay
+  end.classList.add('visible');
+
+  // 3) Premier tir de confettis depuis la gauche & la droite
+  function burst() {
+    confetti({
+      particleCount: 60,
+      spread: 70,
+      origin: { x: 0.1, y: 0.2 }
+    });
+    confetti({
+      particleCount: 60,
+      spread: 70,
+      origin: { x: 0.9, y: 0.2 }
+    });
+  }
+  burst();
+
+  // 4) Abaisse le canvas-confetti juste sous la card (mais au-dessus de l'overlay transparent)
+  const allCanvas = document.querySelectorAll('canvas');
+  const cfCanvas  = allCanvas[allCanvas.length - 1];
+  cfCanvas.style.position = 'fixed';
+  cfCanvas.style.top      = '0';
+  cfCanvas.style.left     = '0';
+  cfCanvas.style.zIndex   = '1001';
+
+  // 5) Petite pluie régulière
+  const confettiInterval = setInterval(burst, 500);
+
+  // 6) Bouton “Play Again”
+  const btn = document.getElementById('restartButton');
+  btn.onclick = () => {
+    clearInterval(confettiInterval);
+    window.location.reload();
+  };
+}
+
+
 function nextLevel() {
   closeShopInterface();
   if (currentLevel < maxLevel) {
@@ -1489,7 +1537,7 @@ function nextLevel() {
     console.log("Niveau", currentLevel, "lancé");
     
   } else {
-    alert("Félicitations, vous avez terminé les niveaux");
     engine.stopRenderLoop();
+    showEndScreen();
   }
 }
