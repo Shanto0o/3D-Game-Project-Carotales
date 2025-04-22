@@ -286,6 +286,7 @@ async function startGame() {
     audioManager.load("fishnorm", "images/fishnormal.wav"),
     audioManager.load("dice", "images/dice.wav"),
     audioManager.load("fail", "images/fail.wav"),
+    audioManager.load("chest", "images/chest.wav"),
 
     // ajoutez d’autres sons ici…
   ]);
@@ -363,6 +364,7 @@ async function startGame() {
         nearInteract = true;
         promptDiv.textContent = "Press E to open chest";
         if (inputStates.interact) {
+          audioManager.play("chest");
           euros += 15;
           updateEurosUI();
           chestOpened[id] = true;
