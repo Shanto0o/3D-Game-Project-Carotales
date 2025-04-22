@@ -10,9 +10,9 @@ Jeu : Le jeu est un platformer où l'on incarne un lapin qui a pour but de récu
 
 L'objectif principal est de passer au niveau suivant dans le temps imparti tout en amassant un maximum de carottes dans l'objectif d'atteindre la carotte sacrée.
   ## Les niveaux : 
-- Dans le premier niveau on est sur une seule île flottante avec une montagne. La fin se situe en haut de la montagne, vous pourrez l'atteindre via 2 chemin, l'un plutôt facile et l'autre plus difficile (mais avec plus de carottes disponible).
-- Dans le deuxième niveau il n'y a plus de mini-jeux mais des ennemis (abeilles) font leur apparition, l'objectif reste le même que pour le premier niveau.
-- (PAS ENCORE IMPLÉMENTÉ) Dans le 3ème niveau nous touchons au but et nous voyons la carotte mais le chemin pour l'atteindre est bloqué par un portail avec 4 cadenas. L'objectif est de déverouiller ces 4 cadenas pour accéder à la carottes et mettre fin au jeu.
+  - Dans le premier niveau on est sur une seule île flottante avec une montagne. La fin se situe en haut de la montagne, vous pourrez l'atteindre via 2 chemin, l'un plutôt facile et l'autre plus difficile (mais avec plus de carottes disponible).
+  - Dans le deuxième niveau il n'y a plus de mini-jeux mais des ennemis (abeilles) font leur apparition, l'objectif reste le même que pour le premier niveau.
+  - (PAS ENCORE IMPLÉMENTÉ) Dans le 3ème niveau nous touchons au but et nous voyons la carotte mais le chemin pour l'atteindre est bloqué par un portail avec 4 cadenas. L'objectif est de déverouiller ces 4 cadenas pour accéder à la carottes et mettre fin au jeu.
 
   ## Fonctionnalité :
   - Dans le premier niveau, nous pouvons effectuer 2 mini-jeux, l'un représente de la pêche dans un étang où l'on va pêcher des poissons-carottes (avec une chance d'en avoir un qui vaut vraiment beaucoup de carottes) et l'autre en haut de la montagne permet de jouer aux dés avec une chance de remporter le gros lot.
