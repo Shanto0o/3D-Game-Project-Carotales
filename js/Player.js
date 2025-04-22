@@ -8,6 +8,7 @@ export default class Player {
     this.mesh.scaling = new BABYLON.Vector3(4, 4, 4);
     this.speed = 12.0;
     this.speedMult = 1.0;    // ← nouveau
+    this.am = null;
 
 
     this.debugFly = true;  // ← nouveau
@@ -119,6 +120,7 @@ export default class Player {
         this.currentAnim?.stop();
         this.animationGroups.jump?.play(false);
         this.currentAnim = this.animationGroups.jump;
+        this.am.play("jump");
 
         return "IN_AIR";
       }
