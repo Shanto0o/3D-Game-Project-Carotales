@@ -33,7 +33,7 @@ L'objectif principal est de passer au niveau suivant dans le temps imparti tout 
   - Noel Shanti : Lapin avec les animations et le mini jeu de pêche.
   - Dubarry Alexis : Le code principale.
 
-  Mais on travaillait ensemble tout le temps donc on s'est tous entraidé et on a tous un peu touché à tout.
+  Mais on travaillait ensemble tout le temps, donc on s'est tous entraidé et on a un peu touché à tout.
 
   ## Problèmes connus :
   - La caméra rentre dans les décors.
