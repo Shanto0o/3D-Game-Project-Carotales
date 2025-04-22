@@ -29,7 +29,7 @@ globalThis.HK = await HavokPhysics();
 
 
 
-let timerDuration = 100;
+let timerDuration = 200;
 let timeLeft;
 let timerInterval;
 let gamePaused = false;
