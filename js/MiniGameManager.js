@@ -44,6 +44,11 @@ export default class MiniGameManager {
     hideInterface() {
       this.interface.style.display = "none";
     }
+
+    resetPlays() {
+      this.playsLeft = this.maxPlays;
+      this.updatePlaysDisplay();
+    }
   
     playDice() {
       if (this.playsLeft <= 0) {
