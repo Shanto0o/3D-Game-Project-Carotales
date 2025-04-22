@@ -65,6 +65,8 @@ export default class Player {
           if (mesh.material) {
             mesh.material = mesh.material.clone(mesh.material.name + "_inst");
           }
+          // ** Ombres ** : reçoit et projette
+          mesh.receiveShadows = true;
           mesh.parent = this.mesh;
           mesh.scaling = new BABYLON.Vector3(4, 4, -4);
           mesh.position = BABYLON.Vector3.Zero();
