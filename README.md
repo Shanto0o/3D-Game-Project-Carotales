@@ -16,7 +16,14 @@ L'objectif principal est de passer au niveau suivant dans le temps imparti tout 
 
   ## Fonctionnalité :
   - Dans le premier niveau, nous pouvons effectuer 2 mini-jeux, l'un représente de la pêche dans un étang où l'on va pêcher des poissons-carottes (avec une chance d'en avoir un qui vaut vraiment beaucoup de carottes) et l'autre en haut de la montagne permet de jouer aux dés avec une chance de remporter le gros lot.
-  - Entre les niveaux une boutique apparait et permet d'acheter des améliorations ce qui donne de l'interêt au ramassage de carottes.
+  - Utilisation du moteur physique Havok.
+  - Systeme de mouvement de caméra pendant qu'on peche.
+  - Entre les niveaux une boutique apparait et permet d'acheter des améliorations ce qui donne de l'interêt au ramassage de carottes. ( Il y a 2 améliorations actives (competences :  freeze, speedboost)) et le reste sont des passifs pour améliorer l'experience de jeu)
+  - Ajout de particules pour les 2 compétences actives du jeu.
+  - Animations.
+  - Ajout de différents sound effects pour rendre le jeu plus vivant.
+  - Les ennemis peuvent nous suivre, sinon ils ont un chemin prédéfini.
+
   
   ## Commandes
   - "z" : Aller en avant.
