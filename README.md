@@ -35,6 +35,12 @@ L'objectif principal est de passer au niveau suivant dans le temps imparti tout 
 
   Mais on travaillait ensemble tout le temps donc on s'est tous entraidé et on a tous un peu touché à tout.
 
+  ## Problèmes connus :
+  - La caméra rentre dans les décors.
+  - Il arrive parfois que le premier saut ne fonctionne pas.
+  - On ne se déplace pas avec la plateforme mouvante du premier niveau.
+
+
   ## Ce qu'on aimerait faire d'ici le rendu finale pour Game on Web :
   - Faire le niveau 3 (on a déjà commencé à faire la carte et réfléchir à comment l'implémenter).
   - Faire en sorte que lorsqu'on se situe sur une plateforme qui se déplace, on se déplace avec elle au lieu de glisser dessus (on en ajoutera plus si on y arrive et on améliorera le parcours).
@@ -42,7 +48,7 @@ L'objectif principal est de passer au niveau suivant dans le temps imparti tout 
   - Empêcher la caméra de traverser les murs.
   - Rajouter du contenu. Si on arrive à faire tout le reste à la fin on essayera de rajouter des mini-jeux ou des niveaux en plus (à la fin seulement).
 
-
+  
 
 
 
