@@ -29,7 +29,7 @@ globalThis.HK = await HavokPhysics();
 
 
 
-let timerDuration = 200;
+let timerDuration = 100;
 let timeLeft;
 let timerInterval;
 let gamePaused = false;
@@ -337,7 +337,7 @@ async function startGame() {
       const total    = baseGain + bonus;
       euros += total;
       updateEurosUI();
-      showToast(`+${total} carottes${bonus>0 ? ` (${baseGain}+${bonus})` : ""}`, 1500);
+      showToast(`+${total} carrots${bonus>0 ? ` (${baseGain}+${bonus})` : ""}`, 1500);
     });
 
         // —— Zone Shop (finishMesh) : “E : Open Shop” —— 
@@ -365,10 +365,10 @@ async function startGame() {
         promptDiv.textContent = "Press E to open chest";
         if (inputStates.interact) {
           audioManager.play("chest");
-          euros += 15;
+          euros += 25;
           updateEurosUI();
           chestOpened[id] = true;
-          showToast(`+15 carrots`, 1500);
+          showToast(`+25 carrots`, 1500);
           mesh.dispose();
         }
       }
@@ -512,10 +512,10 @@ function createScene() {
   
 
   // Exponential fog très léger
-scene.fogMode    = BABYLON.Scene.FOGMODE_EXP2;
-scene.fogColor   = new BABYLON.Color3(0.8, 0.9, 1.0); // bleu très pâle
-scene.clearColor = new BABYLON.Color3(0.8, 0.9, 1.0); // assortir le skybox background
-scene.fogDensity = 0.0014;  // <– 0.008 → 0.0015 (ou encore plus petit, essayez 0.0008)       
+  scene.fogMode    = BABYLON.Scene.FOGMODE_EXP2;
+  scene.fogColor   = new BABYLON.Color3(0.8, 0.9, 1.0); // bleu très pâle
+  scene.clearColor = new BABYLON.Color3(0.8, 0.9, 1.0); // assortir le skybox background
+  scene.fogDensity = 0.0020 ;  // <– 0.008 → 0.0015 (ou encore plus petit, essayez 0.0008)       
 
 
   var gravityVector = new BABYLON.Vector3(0, -9.81, 0);
@@ -542,7 +542,7 @@ scene.fogDensity = 0.0014;  // <– 0.008 → 0.0015 (ou encore plus petit, essa
         // utilisation de l’assurance‑vie
         insuranceUsed = true;
         player.reset_position(scene);
-        showToast("Votre assurance‑vie vous ramène au spawn !", 3000);
+        showToast("Your insurance makes you respawn instantly !", 3000);
         // accordez 1 s d’invulnérabilité pour éviter d’enchainer sur un autre kill immédiat
         invulnerable = true;
         setTimeout(() => invulnerable = false, 1000);
@@ -760,7 +760,7 @@ function createPond(x,y,z) {
     });
   
     // Création de la hit‑box invisible
-    const pondZone = BABYLON.MeshBuilder.CreateBox("pondZone", { size: 1 }, scene);
+    pondZone = BABYLON.MeshBuilder.CreateBox("pondZone", { size: 1 }, scene);
     pondZone.position        = pondMesh.position.clone();
     pondZone.isVisible       = false;
     pondZone.checkCollisions = false;   // <-- remet la détection d’intersection
@@ -774,7 +774,7 @@ function createPond(x,y,z) {
       new BABYLON.ExecuteCodeAction(
         { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: { mesh: player.mesh } },
         () => {
-          showToast("Appuyez sur E pour pêcher", 2000);
+          showToast("Press E to fish", 2000);
           window.addEventListener("keydown", onEnterFishing);
         }
       )
@@ -999,6 +999,8 @@ function clearLevelObjects() {
     pondZone = null;
   }
 
+  pondPosition = null;
+
 
 }
 
@@ -1094,12 +1096,12 @@ function modifySettings() {
         break;
       case "r":
         if (!speedBought) {
-          showToast("Speed non débloqué !", 2500);
+          showToast("Speed boost not unlocked !", 2500);
         } else if (speedActive) {
-          showToast("Speed déjà actif !", 2500);
+          showToast("Speed boost already active !", 2500);
         } else if (speedCooldown) {
           const rem = Math.ceil((speedCooldownDuration - (Date.now() - lastSpeedTime)) / 1000);
-          showToast(`Speed en recharge : ${rem}s`, 2500);
+          showToast(`Speed boost on cooldown : ${rem}s`, 2500);
         } else if (!gamePaused) {
           triggerSpeed();
         }
@@ -1109,12 +1111,12 @@ function modifySettings() {
         break;
       case "a":
         if (!freezeBought) {
-          showToast("Gel non débloqué !", 2500);
+          showToast("Freeze not unlocked!", 2500);
         } else if (freezeActive) {
-          showToast("Gel déjà actif !", 2500);
+          showToast("Freeze already active !", 2500);
         } else if (freezeCooldown) {
           const rem = Math.ceil((freezeCooldownDuration - (Date.now() - lastFreezeTime)) / 1000);
-          showToast(`Gel en recharge : ${rem}s`, 2500);
+          showToast(`Freeze on cooldown : ${rem}s`, 2500);
         } else if (!gamePaused) {
           triggerFreeze();
         }
@@ -1182,11 +1184,20 @@ function startTimer(duration) {
   timerInterval = setInterval(() => {
     timeLeft--;
     document.getElementById("timer").textContent = timeLeft;
-    console.log("Timer:", timeLeft);
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
-      alert("Game Over!");
       engine.stopRenderLoop();
+
+      // Affiche l’écran You Lose
+      const loseMenu = document.getElementById("loseMenu");
+      loseMenu.style.display = "flex";
+      document.exitPointerLock();
+
+      // Bouton Retry
+      document.getElementById("retryButton").onclick = () => {
+        // Recharger la page pour tout réinitialiser
+        window.location.reload();
+      };
     }
   }, 1000);
 }
@@ -1260,26 +1271,26 @@ function buyRangeBonus() {
     currentRangeMult += 0.2; // Augmente la portée de ramassage de 0.2
     player.pickupBox.scaling = player.pickupBox.scaling.multiplyByFloats(currentRangeMult, currentRangeMult, currentRangeMult);
     updateEurosUI();
-    showToast("✓ Portée augmentée ! Multiplicateur actuel : "+ currentRangeMult +".",2500);
+    showToast("Range upgraded ! Actual multiplied : "+ currentRangeMult +".",2500);
     console.log("Bonus portée acheté");
   } else {
     console.log("Pas assez d'euros pour augmenter la portée");
-    showToast("Pas assez de carottes !", 2500);
+    showToast("Not enough carrots !", 2500);
   }
 }
 
 function buyFreezeBonus(){
-  if (freezeBought){ showToast("Déjà acheté !"); return; }
+  if (freezeBought){ showToast("Already bought!"); return; }
   if (euros>=1){
     euros -= 1;
     audioManager.play("purchase");
     freezeBought = true;
     addSkillIcon("iconFreeze","images/gel.png",freezeCooldownDuration);   // <<< NEW icône
     updateEurosUI();
-    showToast("Sort Gel débloqué !");
+    showToast("Freeze unlocked !");
     document.getElementById("item-buyFreeze").style.display = "none";
   }else{
-    showToast("Pas assez de carottes !");
+    showToast("Not enough carrots !");
   }
 }
 
@@ -1296,7 +1307,7 @@ function triggerFreeze() {
 
   // change l’icône pour indiquer le cooldown
   update_skillicon("iconFreeze", "images/gel_cd.png");
-  showToast("Ennemis gelés ! 5 s");
+  showToast("Freeze activated ! 5 s");
 
   // applique le gel
   enemiesManager.enemies.forEach(e => e.freeze(5000));
@@ -1313,7 +1324,7 @@ function triggerFreeze() {
   setTimeout(() => {
     freezeCooldown = false;
     update_skillicon("iconFreeze", "images/gel.png");
-    showToast("Sort Gel prêt à être relancé !");
+    showToast("Freeze is ready to be used !");
   }, freezeCooldownDuration);
 }
 
@@ -1323,15 +1334,15 @@ function donateBonus() {
     euros -= 1;
     audioManager.play("purchase");
     updateEurosUI();
-    showToast("Merci pour votre générosité ! Votre don fait chaud au cœur !", 3000);
+    showToast("Thanks for your generosity ! Your donation is heartwhelming !", 3000);
   } else {
-    showToast("Pas assez de carottes pour faire un don !", 2500);
+    showToast("Not enough carrots !", 2500);
   }
 }
 
 function buySpeedBonus() {
   if (speedBought) {
-    showToast("Déjà acheté !");
+    showToast("Already bought !");
     return;
   }
   if (euros >= 1) {
@@ -1341,10 +1352,10 @@ function buySpeedBonus() {
     // ajoute l’icône avec son cooldown
     addSkillIcon("iconSpeed", "images/speed.png", speedCooldownDuration);
     updateEurosUI();
-    showToast("Speed débloqué !");
+    showToast("Speed boost unlocked !");
     document.getElementById("item-buySpeed").style.display = "none";
   } else {
-    showToast("Pas assez de carottes !");
+    showToast("Not enough carrots !");
   }
 }
 
@@ -1354,7 +1365,7 @@ function triggerSpeed() {
   lastSpeedTime = Date.now();
 
   update_skillicon("iconSpeed", "images/speed_cd.png");
-  showToast("Speed activé ! 10 s");
+  showToast("Speed boost activated ! 10 s");
 
   // applique le multiplicateur
   player.speedMult = 1.5;
@@ -1424,7 +1435,7 @@ function triggerSpeed() {
   setTimeout(() => {
     speedCooldown = false;
     update_skillicon("iconSpeed", "images/speed.png");
-    showToast("Speed prêt à être relancé !");
+    showToast("Speed boost is ready to be used !");
   }, speedCooldownDuration);
 }
 
@@ -1435,15 +1446,15 @@ function buyCarrotLoverBonus() {
     audioManager.play("purchase");
     carrotLoverStacks++;
     updateEurosUI();
-    showToast(`Carrot Lover acheté ! Niveau : ${carrotLoverStacks}`, 3000);
+    showToast(`Carrot Lover already bought ! Level : ${carrotLoverStacks}`, 3000);
   } else {
-    showToast("Pas assez de carottes pour Carrot Lover !", 2500);
+    showToast("Not enough carrots !", 2500);
   }
 }
 
 function buyInsuranceBonus() {
   if (insuranceBought) {
-    showToast("Vous avez déjà cette assurance !");
+    showToast("Already bought !");
     return;
   }
   if (euros >= 1) {
@@ -1451,10 +1462,10 @@ function buyInsuranceBonus() {
     audioManager.play("purchase");
     insuranceBought = true;
     updateEurosUI();
-    showToast("Assurance‑vie activée pour ce niveau !", 3000);
+    showToast("Insure activated for the next level !", 3000);
     document.getElementById("item-buyInsurance").style.display = "none";
   } else {
-    showToast("Pas assez de carottes pour l’assurance !", 2500);
+    showToast("Not enough carrots !", 2500);
   }
 }
 
