@@ -22,6 +22,7 @@ let camera;
 let finishMesh = null;
 let importedMeshes = []; // Tableau pour stocker les meshes importés
 let movingPlatforms = []; // Tableau pour stocker les plateformes en mouvement
+let inspecting = false;
 
 
 globalThis.HK = await HavokPhysics();
@@ -688,8 +689,8 @@ function createGamblingTable (x,y,z) {
           // Charger le modèle gamblingtable.glb
           BABYLON.SceneLoader.ImportMesh("", "images/", "gamblingtable.glb", scene, (meshes) => {
             gamblingTableMesh = meshes[0]; // On suppose que le premier mesh est la table
-            gamblingTableMesh.position = new BABYLON.Vector3(x, y+0.8, z); // Ajustez les coordonnées
-            //gamblingTableMesh.scaling = new BABYLON.Vector3(4, 4, 4); // Ajustez l'échelle si nécessaire
+            gamblingTableMesh.position = new BABYLON.Vector3(x, y, z); // Ajustez les coordonnées
+            gamblingTableMesh.scaling = new BABYLON.Vector3(4, 4, 4); // Ajustez l'échelle si nécessaire
 
             gamblingTableMesh.receiveShadows = true;
             gamblingTableMesh.isVisible = true;
@@ -747,6 +748,7 @@ function createGamblingTable (x,y,z) {
             );
         });
 }
+
 function createPond(x,y,z) {
   BABYLON.SceneLoader.ImportMesh("", "images/", "pond.glb", scene, (meshes) => {
     // On positionne le plan d'eau
@@ -1112,7 +1114,15 @@ function modifySettings() {
         } else if (!gamePaused) {
           triggerFreeze();
         }
-        break;  
+        break;
+      case "i":
+        if (inspecting) {
+          inpecting = false;
+          scene.debugLayer.hide();
+        } else {
+          scene.debugLayer.show();
+          inspecting = true;
+        }
     }
   });
   
