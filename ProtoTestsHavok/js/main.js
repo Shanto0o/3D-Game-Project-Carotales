@@ -19,6 +19,7 @@ let finishMesh = null;
 let importedMeshes = []; // Tableau pour stocker les meshes importés
 let movingPlatforms = []; // Tableau pour stocker les plateformes en mouvement
 
+
 globalThis.HK = await HavokPhysics();
 
 
@@ -86,6 +87,120 @@ let miniGameTriggerZone = null;
 
 let pondPosition;
 
+let preFishingCameraState = null;
+
+/**
+ * Anime la caméra en mode « vue de pêche » : 
+ * on passe au-dessus de l'étang, on monte et on regarde vers le bas.
+ */
+function animateCameraToFishingView() {
+  // Sauvegarde de l’état courant
+  preFishingCameraState = {
+    alpha:  camera.alpha,
+    beta:   camera.beta,
+    radius: camera.radius,
+    target: camera.target.clone()
+  };
+
+  // On veut centrer sur l'étang
+  const fishingTarget = pondPosition.clone();
+
+  // Création des animations (30 fps, sur 2 secondes)
+  const fps = 30, durationFrames = fps * 2;
+  camera.animations = [];
+
+  // 1) Beta → plus proche de 0 pour regarder vers le bas
+  const animBeta = new BABYLON.Animation(
+    "betaAnim", "beta", fps,
+    BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+  animBeta.setKeys([
+    { frame: 0,              value: preFishingCameraState.beta },
+    { frame: durationFrames, value: Math.PI / 8 } // ~22.5°
+  ]);
+  camera.animations.push(animBeta);
+
+  // 2) Radius → on recule un peu
+  const animRadius = new BABYLON.Animation(
+    "radiusAnim", "radius", fps,
+    BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+  animRadius.setKeys([
+    { frame: 0,              value: preFishingCameraState.radius },
+    { frame: durationFrames, value: preFishingCameraState.radius + 10 }
+  ]);
+  camera.animations.push(animRadius);
+
+  // 3) Target.X/Y/Z → déplacer le point visé sur l'étang
+  ["x", "y", "z"].forEach(axis => {
+    const animT = new BABYLON.Animation(
+      `target${axis}`, `target.${axis}`, fps,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+    animT.setKeys([
+      { frame: 0,              value: preFishingCameraState.target[axis] },
+      { frame: durationFrames, value: fishingTarget[axis] }
+    ]);
+    camera.animations.push(animT);
+  });
+
+  scene.beginAnimation(camera, 0, durationFrames, false);
+}
+
+/**
+ * Anime la caméra pour revenir à l’état « suivi joueur ».
+ */
+function animateCameraToPlayerView() {
+  if (!preFishingCameraState) return;
+
+  const fps = 30, durationFrames = fps * 2;
+  camera.animations = [];
+
+  // 1) Beta retour
+  const animBetaBack = new BABYLON.Animation(
+    "betaBack", "beta", fps,
+    BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+  animBetaBack.setKeys([
+    { frame: 0,              value: camera.beta },
+    { frame: durationFrames, value: preFishingCameraState.beta }
+  ]);
+  camera.animations.push(animBetaBack);
+
+  // 2) Radius retour
+  const animRadiusBack = new BABYLON.Animation(
+    "radiusBack", "radius", fps,
+    BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+  );
+  animRadiusBack.setKeys([
+    { frame: 0,              value: camera.radius },
+    { frame: durationFrames, value: preFishingCameraState.radius }
+  ]);
+  camera.animations.push(animRadiusBack);
+
+  // 3) Target.X/Y/Z retour
+  ["x", "y", "z"].forEach(axis => {
+    const animTBack = new BABYLON.Animation(
+      `targetBack${axis}`, `target.${axis}`, fps,
+      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+      BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+    animTBack.setKeys([
+      { frame: 0,              value: camera.target[axis] },
+      { frame: durationFrames, value: preFishingCameraState.target[axis] }
+    ]);
+    camera.animations.push(animTBack);
+  });
+
+  scene.beginAnimation(camera, 0, durationFrames, false);
+  preFishingCameraState = null;
+}
+
 
 
 const promptDiv = document.getElementById("interactPrompt");
@@ -145,6 +260,14 @@ async function startGame() {
   scene = createScene();
   modifySettings();
   camera = createThirdPersonCamera(scene, player.mesh);
+
+  // juste après la création de camera et avant runRenderLoop :
+  window.addEventListener('fishingEnded', () => {
+    // anime la caméra pour revenir derrière le joueur
+    animateCameraToPlayerView();
+    // réactive le pointer‑lock
+    canvas.requestPointerLock();
+  });
 
 
   //musique
@@ -226,10 +349,16 @@ async function startGame() {
       const d = BABYLON.Vector3.Distance(player.mesh.position, pondPosition);
       if (d < 22) {
         promptDiv.textContent = "Press E to fish";
-        // on est proche du pond
         nearInteract = true;
         if (inputStates.interact) {
+          // 1) on ouvre l'UI…
           fishingManager.show();
+          // 2) on bloque les contrôles de la caméra
+          camera.detachControl(canvas);
+          // 3) on lance l'animation vers l'étang
+          animateCameraToFishingView();
+          // 4) on réinitialise l’état de la touche pour éviter de re‑ouvrir
+          inputStates.interact = false;
         }
       }
     }
@@ -411,8 +540,11 @@ function createScene() {
   // branche le bouton "Leave"
   const leaveBtn = document.getElementById('leaveFishingBtn');
   if (leaveBtn) {
-    leaveBtn.addEventListener('click', () => {
+    leaveBtn.addEventListener("click", () => {
       fishingManager.hide();
+      // anime la caméra pour revenir derrière le joueur
+      animateCameraToPlayerView();
+      // et on reprend le pointer‐lock
       canvas.requestPointerLock();
     });
   }
@@ -616,6 +748,9 @@ function createPond(x,y,z) {
       if (evt.key.toLowerCase() === "e") {
         document.exitPointerLock();
         fishingManager.show();
+        // Bloque les contrôles caméra et anime la vue
+        camera.detachControl(canvas);
+        animateCameraToFishingView();
         window.removeEventListener("keydown", onEnterFishing);
       }
     }
@@ -1117,6 +1252,60 @@ function triggerSpeed() {
 
   // applique le multiplicateur
   player.speedMult = 1.5;
+
+
+  // --- NOUVEAU : création du système de particules sous les pieds ---
+  // 1) Emplacement sous les pieds
+  const emitterNode = new BABYLON.TransformNode("speedEmitter", scene);
+  emitterNode.parent   = player.mesh;
+  emitterNode.position = new BABYLON.Vector3(0, 0.1, 0); // 2 unités sous le centre
+
+  // 2) Création du ParticleSystem
+  const ps = new BABYLON.ParticleSystem("speedPS", 150, scene);
+  ps.particleTexture = new BABYLON.Texture("images/flare.png", scene); // ou un sprite fin
+
+  // 3) On émet dans un petit volume plat sous les pieds
+  const box = new BABYLON.BoxParticleEmitter();
+  box.minEmitBox = new BABYLON.Vector3(-1, 0, -0.5);
+  box.maxEmitBox = new BABYLON.Vector3( 1, 0,  0.5);
+  ps.particleEmitterType = box;
+
+  // 4) Couleurs jaune vif
+  ps.color1    = new BABYLON.Color4(1, 1, 0,   1.0);  // jaune opaque
+  ps.color2    = new BABYLON.Color4(1, 1, 0.2, 0.6);  // jaune semi-transparent
+  ps.colorDead = new BABYLON.Color4(1, 1, 0,   0.0);  // disparaît
+
+  // 5) Traits très fins
+  ps.minSize     = 0.05;
+  ps.maxSize     = 0.1;
+
+  // 6) Très courte durée de vie
+  ps.minLifeTime = 0.2;
+  ps.maxLifeTime = 0.4;
+
+  // 7) Pas beaucoup de particules
+  ps.emitRate    = 200;
+
+  // 8) Direction vers le bas (soit juste sous le joueur)
+  ps.direction1 = new BABYLON.Vector3(0, -1, 0);
+  ps.direction2 = new BABYLON.Vector3(0, -2, 0);
+  ps.gravity    = new BABYLON.Vector3(0, -9.81, 0);
+
+  ps.updateSpeed = 0.01;
+  ps.emitter     = emitterNode;
+  ps.start();
+
+  // → Arrêter le système à la fin du boost (10 s)
+  setTimeout(() => {
+    ps.stop();
+    // donner un petit délai pour bien tout nettoyer
+    setTimeout(() => {
+      ps.dispose();
+      emitterNode.dispose();
+    }, 500);
+  }, speedDuration);
+  // --- FIN de l’effet particules ---
+
 
   // fin de l’effet au bout de 10 s
   setTimeout(() => {
