@@ -51,11 +51,47 @@ export default class Enemy {
   freeze(duration = 5000) {
     if (this.frozen) return;
     this.frozen = true;
-    // Passe la physique en STATIC pour bloquer toute interpolation kinematique
     this.aggregate.body.setMotionType(BABYLON.PhysicsMotionType.STATIC);
+  
+    // Émetteur un peu plus bas (1.5 au lieu de 2)
+    const emitter = new BABYLON.TransformNode("freezeEmitter", this.scene);
+    emitter.parent = this.mesh;
+    emitter.position = new BABYLON.Vector3(0, -0.5, 0);
+  
+    const ps = new BABYLON.ParticleSystem("freezePS", 800, this.scene);
+    ps.particleTexture = new BABYLON.Texture("images/flare.png", this.scene);
+  
+    const box = new BABYLON.BoxParticleEmitter();
+    box.minEmitBox = new BABYLON.Vector3(-3, 0, -3);
+    box.maxEmitBox = new BABYLON.Vector3(3, 1.5, 3);
+    ps.particleEmitterType = box;
+  
+    // Couleurs 100 % bleues
+    ps.color1     = new BABYLON.Color4(0.0, 0.5, 1.0, 1.0); // bleu vif
+    ps.color2     = new BABYLON.Color4(0.0, 0.3, 0.8, 0.8); // bleu plus foncé
+    ps.colorDead  = new BABYLON.Color4(0.0, 0.0, 0.2, 0.0);
+  
+    ps.minSize      = 0.3;
+    ps.maxSize      = 0.6;
+    ps.minLifeTime  = 0.5;
+    ps.maxLifeTime  = 1.2;
+    ps.emitRate     = 600;
+    ps.direction1   = new BABYLON.Vector3(-0.5, 1.5, -0.5);
+    ps.direction2   = new BABYLON.Vector3(0.5, 2.0, 0.5);
+    ps.minEmitPower = 1;
+    ps.maxEmitPower = 4;
+    ps.updateSpeed  = 0.02;
+  
+    ps.emitter = emitter;
+    ps.start();
+  
     setTimeout(() => {
+      ps.stop();
+      setTimeout(() => {
+        ps.dispose();
+        emitter.dispose();
+      }, 1000);
       this.frozen = false;
-      // On remet en ANIMATED pour reprendre la patrouille ou la poursuite
       this.aggregate.body.setMotionType(BABYLON.PhysicsMotionType.ANIMATED);
     }, duration);
   }
