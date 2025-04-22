@@ -1455,7 +1455,6 @@ function startCooldown(iconId) {
 }
 
 function showEndScreen() {
-  // 1) Récupère et rattache l'overlay en dernier
   const end = document.getElementById('endScreen');
   if (!end) return;
   end.remove();
@@ -1463,10 +1462,8 @@ function showEndScreen() {
 
   document.exitPointerLock();
   audioManager.play("horn");
-  // 2) Affiche l'overlay
   end.classList.add('visible');
 
-  // 3) Premier tir de confettis depuis la gauche & la droite
   function burst() {
     confetti({
       particleCount: 60,
@@ -1481,7 +1478,6 @@ function showEndScreen() {
   }
   burst();
 
-  // 4) Abaisse le canvas-confetti juste sous la card (mais au-dessus de l'overlay transparent)
   const allCanvas = document.querySelectorAll('canvas');
   const cfCanvas  = allCanvas[allCanvas.length - 1];
   cfCanvas.style.position = 'fixed';
@@ -1489,10 +1485,8 @@ function showEndScreen() {
   cfCanvas.style.left     = '0';
   cfCanvas.style.zIndex   = '1001';
 
-  // 5) Petite pluie régulière
   const confettiInterval = setInterval(burst, 500);
 
-  // 6) Bouton “Play Again”
   const btn = document.getElementById('restartButton');
   btn.onclick = () => {
     clearInterval(confettiInterval);
