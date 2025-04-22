@@ -80,9 +80,16 @@ export default class FishingManager {
     if (handleY >= redRect.top && handleY <= redRect.bottom) {
       this.insideTime += dt;
       if (this.insideTime >= this.targetTime) {
-        const gain = 2;
+        // 10% chance de rare loot à 25 €
+        let gain;
+        if (Math.random() < 0.1) {
+          gain = 25;
+          his.toastFn(`RARE LOOT (10%) : +${gain}  carrots !`, 2000);
+        } else {
+          gain = Math.floor(Math.random() * 5) + 1;
+          this.toastFn(`+${gain}  carrots`, 2000);
+        }
         this.setEuros(this.getEuros() + gain);
-        this.toastFn(`+${gain}  carrots`, 2000);
         this.hide();
         return;
       }
