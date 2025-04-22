@@ -2,7 +2,7 @@ export default class Player {
   constructor(scene) {
     this.scene = scene;
     this.mesh = BABYLON.MeshBuilder.CreateCapsule("playerCollision", { diameter: 2, height: 0.5 }, scene);
-    this.mesh.position.y = 10;
+    this.mesh.position.y = 3;
     this.mesh.scaling = new BABYLON.Vector3(4, 4, 4);
     this.speed = 12.0;
     this.speedMult = 1.0; 
