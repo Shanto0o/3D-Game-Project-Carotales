@@ -515,7 +515,7 @@ function createScene() {
   scene.fogMode    = BABYLON.Scene.FOGMODE_EXP2;
   scene.fogColor   = new BABYLON.Color3(0.8, 0.9, 1.0); // bleu très pâle
   scene.clearColor = new BABYLON.Color3(0.8, 0.9, 1.0); // assortir le skybox background
-  scene.fogDensity = 0.0020 ;  // <– 0.008 → 0.0015 (ou encore plus petit, essayez 0.0008)       
+  scene.fogDensity = 0.0014 ;  // <– 0.008 → 0.0015 (ou encore plus petit, essayez 0.0008)       
 
 
   var gravityVector = new BABYLON.Vector3(0, -9.81, 0);
