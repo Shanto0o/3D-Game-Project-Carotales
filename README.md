@@ -46,6 +46,7 @@ L'objectif principal est de passer au niveau suivant dans le temps imparti tout 
   - La caméra rentre dans les décors.
   - Il arrive parfois que le premier saut ne fonctionne pas.
   - On ne se déplace pas avec la plateforme mouvante du premier niveau.
+  - Le lapin fait des 360 à un certain angle.
 
 
   ## Ce qu'on aimerait faire d'ici le rendu finale pour Game on Web :
