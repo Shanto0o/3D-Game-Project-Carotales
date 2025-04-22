@@ -9,6 +9,7 @@ export default class FishingManager {
     this.getEuros    = getEuros;
     this.setEuros    = setEuros;
     this.toastFn     = toastFn;
+    this.am = null;
 
     this.interface   = document.getElementById("fishingInterface");
     this.bar         = document.getElementById("fishingBar");
@@ -80,13 +81,16 @@ export default class FishingManager {
 
     if (handleY >= redRect.top && handleY <= redRect.bottom) {
       this.insideTime += dt;
+
       if (this.insideTime >= this.targetTime) {
         // 10% chance de rare loot à 25 €
         let gain;
         if (Math.random() < 0.4) {
+          this.am.play("fish");
           gain = 25;
           this.toastFn(`RARE LOOT (10%) : +${gain} carrots !`, 2000);
         } else {
+          this.am.play("fishnorm");
           gain = Math.floor(Math.random() * 5) + 1;
           this.toastFn(`+${gain}  carrots`, 2000);
         }
