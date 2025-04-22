@@ -3,6 +3,7 @@ import OrbsManager from "./OrbsManager.js";
 import EnemiesManager from "./EnemiesManager.js";
 import MiniGameManager from "./MiniGameManager.js";
 import FishingManager from "./FishingManager.js";
+import AudioManager from "./AudioManager.js";
 
 
 let canvas;
@@ -14,6 +15,9 @@ let orbsManager;
 let enemiesManager;
 let fishingManager;
 let ground;
+let audioManager;
+let pondMesh;
+let pondZone;
 let camera;
 let finishMesh = null;
 let importedMeshes = []; // Tableau pour stocker les meshes importés
@@ -270,6 +274,32 @@ async function startGame() {
   });
 
 
+  // Instanciation de notre gestionnaire audio
+  audioManager = new AudioManager(scene);
+  // Chargement des sons que l’on veut précharger
+  await Promise.all([
+    audioManager.load("purchase", "images/purshased.wav"),
+    audioManager.load("pickitem", "images/pickitem.wav"),
+    audioManager.load("jump", "images/jump.wav"),
+    audioManager.load("fish", "images/fish.wav"),
+    audioManager.load("fishnorm", "images/fishnormal.wav"),
+    audioManager.load("dice", "images/dice.wav"),
+    audioManager.load("fail", "images/fail.wav"),
+
+    // ajoutez d’autres sons ici…
+  ]);
+
+  if (player) {
+    player.am = audioManager;
+  }
+  if (fishingManager) {  
+    fishingManager.am = audioManager;
+  }
+  if ( miniGameManager ) {
+    miniGameManager.am = audioManager;
+  }
+
+
   //musique
   // Juste après avoir créé votre <canvas> et avant d’instancier l’Engine
   // Désactive le bouton “Unmute” par défaut
@@ -299,6 +329,7 @@ async function startGame() {
     let nearInteract = false;
     // Vérification des collisions avec les orbes
     orbsManager.checkCollisions(player, () => {
+      audioManager.play("pickitem");
       const baseGain = 5;
       const bonus    = carrotLoverStacks;               // +1 par stack
       const total    = baseGain + bonus;
@@ -524,6 +555,7 @@ scene.fogDensity = 0.0014;  // <– 0.008 → 0.0015 (ou encore plus petit, essa
 
   // Instanciez d'abord le player
   player = new Player(scene);
+
   
   spawnPosition = new BABYLON.Vector3(0, 10, 0);   // point d’apparition
 
@@ -719,9 +751,10 @@ function createGamblingTable (x,y,z) {
 function createPond(x,y,z) {
   BABYLON.SceneLoader.ImportMesh("", "images/", "pond.glb", scene, (meshes) => {
     // On positionne le plan d'eau
-    meshes[0].position = new BABYLON.Vector3(x, y, z);
-    meshes[0].receiveShadows = true;
-    pondPosition = meshes[0].position.clone();
+    pondMesh = meshes[0]; // On suppose que le premier mesh est le plan d'eau
+    pondMesh.position = new BABYLON.Vector3(x, y, z);
+    pondMesh.receiveShadows = true;
+    pondPosition = pondMesh.position.clone();
     meshes.forEach(m => {
       m.checkCollisions  = true;
       m.receiveShadows   = true;
@@ -732,7 +765,7 @@ function createPond(x,y,z) {
   
     // Création de la hit‑box invisible
     const pondZone = BABYLON.MeshBuilder.CreateBox("pondZone", { size: 1 }, scene);
-    pondZone.position        = meshes[0].position.clone();
+    pondZone.position        = pondMesh.position.clone();
     pondZone.isVisible       = false;
     pondZone.checkCollisions = false;   // <-- remet la détection d’intersection
     pondZone.isPickable      = false;  // n’interfère pas pour les clics
@@ -1210,6 +1243,7 @@ function closeShopInterface() {
 function buyRangeBonus() {
   if (euros >= 1) {
     euros -= 1;
+    audioManager.play("purchase");
     currentRangeMult += 0.2; // Augmente la portée de ramassage de 0.2
     player.pickupBox.scaling = player.pickupBox.scaling.multiplyByFloats(currentRangeMult, currentRangeMult, currentRangeMult);
     updateEurosUI();
@@ -1225,6 +1259,7 @@ function buyFreezeBonus(){
   if (freezeBought){ showToast("Déjà acheté !"); return; }
   if (euros>=1){
     euros -= 1;
+    audioManager.play("purchase");
     freezeBought = true;
     addSkillIcon("iconFreeze","images/gel.png",freezeCooldownDuration);   // <<< NEW icône
     updateEurosUI();
@@ -1273,6 +1308,7 @@ function donateBonus() {
   console.log("donateBonus invoked – euros =", euros);
   if (euros >= 1) {
     euros -= 1;
+    audioManager.play("purchase");
     updateEurosUI();
     showToast("Merci pour votre générosité ! Votre don fait chaud au cœur !", 3000);
   } else {
@@ -1287,6 +1323,7 @@ function buySpeedBonus() {
   }
   if (euros >= 1) {
     euros    -= 1;
+    audioManager.play("purchase");
     speedBought = true;
     // ajoute l’icône avec son cooldown
     addSkillIcon("iconSpeed", "images/speed.png", speedCooldownDuration);
@@ -1382,6 +1419,7 @@ function triggerSpeed() {
 function buyCarrotLoverBonus() {
   if (euros >= 1) {
     euros -= 1;
+    audioManager.play("purchase");
     carrotLoverStacks++;
     updateEurosUI();
     showToast(`Carrot Lover acheté ! Niveau : ${carrotLoverStacks}`, 3000);
@@ -1397,6 +1435,7 @@ function buyInsuranceBonus() {
   }
   if (euros >= 1) {
     euros -= 1;
+    audioManager.play("purchase");
     insuranceBought = true;
     updateEurosUI();
     showToast("Assurance‑vie activée pour ce niveau !", 3000);
