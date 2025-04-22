@@ -856,7 +856,6 @@ function createGround(scene, level) {
             new BABYLON.Vector3(113.5, 54.2, 12.5),
             new BABYLON.Vector3(134.5, 56.2, 26.1),
             new BABYLON.Vector3(198.9, 73, 86.8),
-            new BABYLON.Vector3(253.8,82,5,82.7),
             new BABYLON.Vector3(253.1,94.4,55.9),
             new BABYLON.Vector3(254,100,29.3),
             new BABYLON.Vector3(233.6, 91, -29.9),
