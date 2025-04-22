@@ -39,6 +39,7 @@ L'objectif principal est de passer au niveau suivant dans le temps imparti tout 
   - Faire le niveau 3 (on a déjà commencé à faire la carte et réfléchir à comment l'implémenter).
   - Faire en sorte que lorsqu'on se situe sur une plateforme qui se déplace, on se déplace avec elle au lieu de glisser dessus (on en ajoutera plus si on y arrive et on améliorera le parcours).
   - Ajouter des ombres.
+  - Empêcher la caméra de traverser les murs.
   - Rajouter du contenu. Si on arrive à faire tout le reste à la fin on essayera de rajouter des mini-jeux ou des niveaux en plus (à la fin seulement).
 
 
