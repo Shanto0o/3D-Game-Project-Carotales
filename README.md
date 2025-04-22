@@ -1,5 +1,6 @@
 # Carotales
-https://shanto0o.github.io/3D-Game-Project-Carotales/
+Jeu hébergé sur : https://shanto0o.github.io/3D-Game-Project-Carotales/
+Video présentation du gameplay : 
   ## Groupe
   - **Nom** : Florant Belot, Alexis Dubarry, Shanti Noel
 
