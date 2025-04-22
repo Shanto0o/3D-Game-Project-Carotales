@@ -20,8 +20,8 @@ let pondMesh;
 let pondZone;
 let camera;
 let finishMesh = null;
-let importedMeshes = []; // Tableau pour stocker les meshes importés
-let movingPlatforms = []; // Tableau pour stocker les plateformes en mouvement
+let importedMeshes = [];
+let movingPlatforms = [];
 let inspecting = false;
 
 
@@ -34,56 +34,50 @@ let timeLeft;
 let timerInterval;
 let gamePaused = false;
 
-let spawnPosition;          // mémorise la position de départ
-let playerDead = false;     // true pendant les 3 s
-let invulnerable = false;  // invulnérabilité temporaire après respawn
+let spawnPosition;
+let playerDead = false;
+let invulnerable = false;
 
-// Système de niveaux
+
 let currentLevel = 1;
 const maxLevel = 2;
-let orbsTarget = currentLevel * 5; // Exemple : niveau 1 = 5 orbes, niveau 2 = 10, etc.
-let collectedOrbs = 0; // Compteur d'orbes collectées 
+let orbsTarget = currentLevel * 5;
+let collectedOrbs = 0;
 
 
 
 
-// Boutique / monnaie
-let euros = 0; // Solde en €
-let currentRangeMult = 1; // Multiplie la portée de ramassage
+let euros = 0;
+let currentRangeMult = 1;
 
 let shopPosition; 
-// SORTS ACTIVABLES
-// --- Sort Gel ---
-let freezeBought   = false;   // acheté ?
-let freezeActive   = false;   // en cours d’effet ? 
-let freezeCooldown = false;                      // ← flag de cooldown
-const freezeCooldownDuration = 60_000;           // ← durée du cooldown en ms (60 s)
-let lastFreezeTime = 0;                        // ← timestamp du dernier gel
 
-// Sort Speed
+
+let freezeBought   = false;
+let freezeActive   = false;
+let freezeCooldown = false;
+const freezeCooldownDuration = 60_000;
+let lastFreezeTime = 0;
+
+
 let speedBought    = false;
 let speedActive    = false;
 let speedCooldown  = false;
-const speedDuration        = 10_000;    // effet : 10 s
-const speedCooldownDuration= 60_000;    // recharge : 60 s
+const speedDuration        = 10_000;
+const speedCooldownDuration= 60_000;
 let lastSpeedTime  = 0;
 
-// Carrot Lover : nombre de carottes bonus a chaque récupération de carotte
 let carrotLoverStacks = 0;
 
-// Assurance‑vie
 let insuranceBought = false;
 let insuranceUsed   = false;
 
 let miniGameManager;
 
-// Distance pour déclencher la fin de niveau
 const FINISH_THRESHOLD = 3;
 
 
-// Stocke tous les coffres créés
 const chests = [];
-// Suivi de l'état d'ouverture par chestId
 const chestOpened = {};
 
 let gamblingTableMesh = null;
@@ -94,12 +88,8 @@ let pondPosition;
 
 let preFishingCameraState = null;
 
-/**
- * Anime la caméra en mode « vue de pêche » : 
- * on passe au-dessus de l'étang, on monte et on regarde vers le bas.
- */
+
 function animateCameraToFishingView() {
-  // Sauvegarde de l’état courant
   preFishingCameraState = {
     alpha:  camera.alpha,
     beta:   camera.beta,
@@ -107,14 +97,11 @@ function animateCameraToFishingView() {
     target: camera.target.clone()
   };
 
-  // On veut centrer sur l'étang
   const fishingTarget = pondPosition.clone();
 
-  // Création des animations (30 fps, sur 2 secondes)
   const fps = 30, durationFrames = fps * 2;
   camera.animations = [];
 
-  // 1) Beta → plus proche de 0 pour regarder vers le bas
   const animBeta = new BABYLON.Animation(
     "betaAnim", "beta", fps,
     BABYLON.Animation.ANIMATIONTYPE_FLOAT,
@@ -122,11 +109,10 @@ function animateCameraToFishingView() {
   );
   animBeta.setKeys([
     { frame: 0,              value: preFishingCameraState.beta },
-    { frame: durationFrames, value: Math.PI / 8 } // ~22.5°
+    { frame: durationFrames, value: Math.PI / 8 }
   ]);
   camera.animations.push(animBeta);
 
-  // 2) Radius → on recule un peu
   const animRadius = new BABYLON.Animation(
     "radiusAnim", "radius", fps,
     BABYLON.Animation.ANIMATIONTYPE_FLOAT,
@@ -138,7 +124,6 @@ function animateCameraToFishingView() {
   ]);
   camera.animations.push(animRadius);
 
-  // 3) Target.X/Y/Z → déplacer le point visé sur l'étang
   ["x", "y", "z"].forEach(axis => {
     const animT = new BABYLON.Animation(
       `target${axis}`, `target.${axis}`, fps,
@@ -155,16 +140,13 @@ function animateCameraToFishingView() {
   scene.beginAnimation(camera, 0, durationFrames, false);
 }
 
-/**
- * Anime la caméra pour revenir à l’état « suivi joueur ».
- */
+
 function animateCameraToPlayerView() {
   if (!preFishingCameraState) return;
 
   const fps = 30, durationFrames = fps * 2;
   camera.animations = [];
 
-  // 1) Beta retour
   const animBetaBack = new BABYLON.Animation(
     "betaBack", "beta", fps,
     BABYLON.Animation.ANIMATIONTYPE_FLOAT,
@@ -176,7 +158,6 @@ function animateCameraToPlayerView() {
   ]);
   camera.animations.push(animBetaBack);
 
-  // 2) Radius retour
   const animRadiusBack = new BABYLON.Animation(
     "radiusBack", "radius", fps,
     BABYLON.Animation.ANIMATIONTYPE_FLOAT,
@@ -188,7 +169,6 @@ function animateCameraToPlayerView() {
   ]);
   camera.animations.push(animRadiusBack);
 
-  // 3) Target.X/Y/Z retour
   ["x", "y", "z"].forEach(axis => {
     const animTBack = new BABYLON.Animation(
       `targetBack${axis}`, `target.${axis}`, fps,
@@ -219,7 +199,6 @@ function updateEurosUI() {
 }
 
 
-// En haut de main.js, après avoir chargé le DOM :
 const timerDiv = document.getElementById("timerDisplay");
 const eurosDiv = document.getElementById("eurosDisplay");
 
@@ -227,25 +206,19 @@ const eurosDiv = document.getElementById("eurosDisplay");
 
 
 
-// Lancement du jeu (niveau 1) lorsque l'utilisateur clique sur "Jouer"
 document.getElementById("playButton").addEventListener("click", () => {
   console.log("Bouton Jouer cliqué — affichage de l'intro");
   document.getElementById("menu").style.display = "none";
   document.getElementById("introInterface").style.display = "flex";
 });
 
-// Au clic sur "Continuer", on lance vraiment le jeu
 document.getElementById("introContinue").addEventListener("click", async () => {
   console.log("Intro terminée — démarrage du jeu");
-  // On cache l'overlay
   document.getElementById("introInterface").style.display = "none";
-  // On affiche le timer et le compteur de carottes
   timerDiv.style.display = "block";
   eurosDiv.style.display = "block";
-  // On appelle startGame normalement
   const bgMusic = await startGame();
   bgMusic.play();
-  // On prend le pointer lock pour contrôler la caméra
   canvas.requestPointerLock();
 });
 
@@ -259,25 +232,20 @@ async function startGame() {
   engine = new BABYLON.Engine(
     canvas,
     true,
-    { audioEngine: true }, // ← active le legacy audio engine
+    { audioEngine: true },
     true
   );
   scene = createScene();
   modifySettings();
   camera = createThirdPersonCamera(scene, player.mesh);
 
-  // juste après la création de camera et avant runRenderLoop :
   window.addEventListener('fishingEnded', () => {
-    // anime la caméra pour revenir derrière le joueur
     animateCameraToPlayerView();
-    // réactive le pointer‑lock
     canvas.requestPointerLock();
   });
 
 
-  // Instanciation de notre gestionnaire audio
   audioManager = new AudioManager(scene);
-  // Chargement des sons que l’on veut précharger
   await Promise.all([
     audioManager.load("purchase", "images/purshased.wav"),
     audioManager.load("pickitem", "images/pickitem.wav"),
@@ -288,7 +256,6 @@ async function startGame() {
     audioManager.load("fail", "images/fail.wav"),
     audioManager.load("chest", "images/chest.mp3"),
 
-    // ajoutez d’autres sons ici…
   ]);
 
   if (player) {
@@ -302,9 +269,6 @@ async function startGame() {
   }
 
 
-  //musique
-  // Juste après avoir créé votre <canvas> et avant d’instancier l’Engine
-  // Désactive le bouton “Unmute” par défaut
   BABYLON.Engine.audioEngine.useCustomUnlockedButton = true;
 
 
@@ -329,18 +293,16 @@ async function startGame() {
 
       
     let nearInteract = false;
-    // Vérification des collisions avec les orbes
     orbsManager.checkCollisions(player, () => {
       audioManager.play("pickitem");
       const baseGain = 5;
-      const bonus    = carrotLoverStacks;               // +1 par stack
+      const bonus    = carrotLoverStacks;
       const total    = baseGain + bonus;
       euros += total;
       updateEurosUI();
       showToast(`+${total} carrots${bonus>0 ? ` (${baseGain}+${bonus})` : ""}`, 1500);
     });
 
-        // —— Zone Shop (finishMesh) : “E : Open Shop” —— 
     if (finishMesh) {
       const distShop = BABYLON.Vector3.Distance(player.mesh.position, finishMesh.position);
       if (distShop < 15) {
@@ -358,7 +320,7 @@ async function startGame() {
     
 
     chests.forEach(({ mesh, id }) => {
-      if (chestOpened[id]) return;  // déjà ouvert
+      if (chestOpened[id]) return; 
       const d = BABYLON.Vector3.Distance(player.mesh.position, mesh.position);
       if (d < 3) {
         nearInteract = true;
@@ -378,20 +340,15 @@ async function startGame() {
 
 
 
-    // —— mini‑jeu de pêche par distance ——
     if (pondPosition && !fishingManager.isFishing) {
       const d = BABYLON.Vector3.Distance(player.mesh.position, pondPosition);
       if (d < 22) {
         promptDiv.textContent = "Press E to fish";
         nearInteract = true;
         if (inputStates.interact) {
-          // 1) on ouvre l'UI…
           fishingManager.show();
-          // 2) on bloque les contrôles de la caméra
           camera.detachControl(canvas);
-          // 3) on lance l'animation vers l'étang
           animateCameraToFishingView();
-          // 4) on réinitialise l’état de la touche pour éviter de re‑ouvrir
           inputStates.interact = false;
         }
       }
@@ -402,7 +359,6 @@ async function startGame() {
     scene.render();
   });
 
-  // Musique
   return new Promise((resolve) => {
     const bgMusic = new BABYLON.Sound(
       "BackgroundMusic",
@@ -410,7 +366,7 @@ async function startGame() {
       scene,
       () => {
         console.log("🎵 Musique chargée !");
-        resolve(bgMusic); // Résout la promesse avec bgMusic
+        resolve(bgMusic);
       },
       { loop: true, autoplay: false, volume: 0.5, streaming: true, spatialSound: false }
     );
@@ -426,7 +382,6 @@ function createMovingPlatform(scene, p_from, p_to, speed = 2) {
       return;
     }
 
-    // Filtrage des meshes valides (certains fichiers glb incluent des nodes vides ou transform nodes)
     const validMeshes = meshes.filter(mesh => mesh instanceof BABYLON.Mesh && mesh.geometry);
     if (validMeshes.length === 0) {
       console.error("Aucun mesh visible à fusionner dans plat.glb.");
@@ -435,7 +390,6 @@ function createMovingPlatform(scene, p_from, p_to, speed = 2) {
 
     const platform = BABYLON.Mesh.MergeMeshes(validMeshes, true, true, undefined, false, true);
 
-    // ** Ombres **
     platform.receiveShadows = true;
     if (!platform) {
       console.error("Échec de la fusion des meshes de la plateforme.");
@@ -444,12 +398,12 @@ function createMovingPlatform(scene, p_from, p_to, speed = 2) {
 
     platform.name = "movingPlatform";
     platform.position = p_from.clone();
-    platform.userVelocity = BABYLON.Vector3.Zero(); // <-- Stockage de vitesse personnalisée
+    platform.userVelocity = BABYLON.Vector3.Zero();
 
     const aggregate = new BABYLON.PhysicsAggregate(
       platform,
       BABYLON.PhysicsShapeType.BOX,
-      { mass: 0 }, // Static / animé
+      { mass: 0 },
       scene
     );
     aggregate.body.setMotionType(BABYLON.PhysicsMotionType.ANIMATED);
@@ -467,25 +421,21 @@ function createMovingPlatform(scene, p_from, p_to, speed = 2) {
     
       aggregate.body.setTargetTransform(newPos, platform.rotationQuaternion ?? BABYLON.Quaternion.Identity());
     
-      // Calcul manuel de la vélocité
       platform.userVelocity = newPos.subtract(prevPos).scale(1 / dt);
     };
     
     const observer = scene.onBeforeRenderObservable.add(update);
     
-    // Stocke la plateforme et l'observer
     movingPlatforms.push({ platform, observer });
   });
 }
 
 function clearMovingPlatforms(scene) {
   for (const { platform, observer } of movingPlatforms) {
-    // Supprime l'observable
     scene.onBeforeRenderObservable.remove(observer);
-    // Supprime le mesh et les ressources liées
     platform.dispose();
   }
-  movingPlatforms.length = 0; // Vide la liste
+  movingPlatforms.length = 0;
 }
 
 function createChest(x, y, z, chestId) {
@@ -496,7 +446,6 @@ function createChest(x, y, z, chestId) {
       chest.position.set(x, y, z);
       chest.scaling  = new BABYLON.Vector3(4, 4, 4);
 
-      // ** Ombres **
       chest.receiveShadows = true;
 
       chest.checkCollisions = false;
@@ -511,11 +460,10 @@ function createScene() {
   let scene = new BABYLON.Scene(engine);
   
 
-  // Exponential fog très léger
   scene.fogMode    = BABYLON.Scene.FOGMODE_EXP2;
-  scene.fogColor   = new BABYLON.Color3(0.8, 0.9, 1.0); // bleu très pâle
-  scene.clearColor = new BABYLON.Color3(0.8, 0.9, 1.0); // assortir le skybox background
-  scene.fogDensity = 0.0014 ;  // <– 0.008 → 0.0015 (ou encore plus petit, essayez 0.0008)       
+  scene.fogColor   = new BABYLON.Color3(0.8, 0.9, 1.0);
+  scene.clearColor = new BABYLON.Color3(0.8, 0.9, 1.0);
+  scene.fogDensity = 0.0014 ;
 
 
   var gravityVector = new BABYLON.Vector3(0, -9.81, 0);
@@ -527,7 +475,6 @@ function createScene() {
       enemiesManager.updateAll(player);
 
 
-      // Vérification des collisions avec les ennemis
     if (!playerDead && !invulnerable && currentLevel >= 2) {
       enemiesManager.enemies.forEach(enemy => {
         if (enemy.mesh.intersectsMesh(player.mesh, false)) {
@@ -539,11 +486,9 @@ function createScene() {
 
     if (!playerDead && !invulnerable && player.mesh.position.y < -50) {
       if (insuranceBought && !insuranceUsed) {
-        // utilisation de l’assurance‑vie
         insuranceUsed = true;
         player.reset_position(scene);
         showToast("Your insurance makes you respawn instantly !", 3000);
-        // accordez 1 s d’invulnérabilité pour éviter d’enchainer sur un autre kill immédiat
         invulnerable = true;
         setTimeout(() => invulnerable = false, 1000);
       } else {
@@ -553,19 +498,16 @@ function createScene() {
 
 
     });
-  //scene.clearColor = new BABYLON.Color3(0.1, 0.1, 0.3);
   createLights(scene);
 
-  // Instanciez d'abord le player
   player = new Player(scene);
 
   
-  spawnPosition = new BABYLON.Vector3(0, 10, 0);   // point d’apparition
+  spawnPosition = new BABYLON.Vector3(0, 10, 0);
 
 
 
   
-  // Instanciez orbsManager sans orbes initiaux (ou avec 0 orbe)
   orbsManager = new OrbsManager(scene);
 
   enemiesManager = new EnemiesManager(scene);
@@ -584,35 +526,27 @@ function createScene() {
     (msg, duration) => showToast(msg, duration)
   );
 
-  // branche le bouton "Leave"
   const leaveBtn = document.getElementById('leaveFishingBtn');
   if (leaveBtn) {
     leaveBtn.addEventListener("click", () => {
       fishingManager.hide();
-      // anime la caméra pour revenir derrière le joueur
       animateCameraToPlayerView();
-      // et on reprend le pointer‐lock
       canvas.requestPointerLock();
     });
   }
 
 
-  // Par exemple juste après avoir instancié player et enemiesManager :
-
-  // Pour chaque ennemi importé :
   enemiesManager.enemies.forEach(e => {
   });
 
   BABYLON.SceneLoader.ImportMesh(
-    /* meshNames */ "", 
-    /* rootUrl   */ "images/", 
-    /* fileName  */ "lightbluesky.glb", 
-    /* scene     */ scene,
+    "", 
+    "images/", 
+    "lightbluesky.glb", 
+    scene,
     (meshes) => {
       meshes.forEach(mesh => {
-        // Place la skybox à l'infini pour qu'elle suive la caméra
         mesh.infiniteDistance = true;
-        // Désactive les collisions pour ne pas gêner le joueur
         mesh.checkCollisions = false;
       });
     }
@@ -621,7 +555,6 @@ function createScene() {
 
   scene.onBeforeRenderObservable.add((scene) => {
     player.mesh.position.copyFrom(player.controller.getPosition());
-    // camera following
     var cameraDirection = camera.getDirection(new BABYLON.Vector3(0,0,1));
     cameraDirection.y = 0;
     cameraDirection.normalize();
@@ -638,7 +571,6 @@ function createScene() {
     let dt = scene.deltaTime / 1000.0;
     if (dt == 0) return;
 
-    // ← Si le joueur est en cours de « mort », on ne f ait rien
     if (playerDead) {
       return;
     }
@@ -658,7 +590,6 @@ function createScene() {
 
 
   
-  // Créez le ground, ce qui va appeler createOrbsAtPositions à la fin du chargement
   ground = createGround(scene, currentLevel);
   
   return scene;
@@ -666,61 +597,52 @@ function createScene() {
 
 function createFinishPoint(x , y, z) {
             
-  // Création du point d'arrivée
   finishMesh = BABYLON.MeshBuilder.CreateBox("finish", { size: 2 }, scene);
-  shopPosition = finishMesh.position.clone(); // Mémoriser la position de la boutique
-  finishMesh.position.set(x, y, z); // <-- coordonnées fixes
-  finishMesh.isVisible = true; // Rendre la boîte invisible (utilisée uniquement pour les collisions)
-  finishMesh.checkCollisions = true; // Activer les collisions pour la boîte
+  shopPosition = finishMesh.position.clone();
+  finishMesh.position.set(x, y, z);
+  finishMesh.isVisible = true;
+  finishMesh.checkCollisions = true;
 
-  // Charger le modèle finish.glb pour l'apparence
   BABYLON.SceneLoader.ImportMesh("", "images/", "finish.glb", scene, (meshes) => {
-      const finishModel = meshes[0]; // On suppose que le premier mesh est le modèle principal
-      finishModel.parent = finishMesh; // Attacher le modèle à la boîte
+      const finishModel = meshes[0];
+      finishModel.parent = finishMesh;
 
       finishModel.receiveShadows = true;
-      // tourner le panneau de 90° vers la droite
-      finishModel.rotation.y = Math.PI / 2; // Ajuster la rotation si nécessaire
-      finishModel.scaling = new BABYLON.Vector3(1, 1, -1); // Ajuster l'échelle si nécessaire
+      finishModel.rotation.y = Math.PI / 2;
+      finishModel.scaling = new BABYLON.Vector3(1, 1, -1);
       console.log("Modèle finish.glb chargé et attaché à la boîte");
   });
   }
 
 
 function createGamblingTable (x,y,z) {
-          // Charger le modèle gamblingtable.glb
           BABYLON.SceneLoader.ImportMesh("", "images/", "gamblingtable.glb", scene, (meshes) => {
-            gamblingTableMesh = meshes[0]; // On suppose que le premier mesh est la table
-            gamblingTableMesh.position = new BABYLON.Vector3(x, y+0.8, z); // Ajustez les coordonnées
-            gamblingTableMesh.scaling = new BABYLON.Vector3(0.8, 0.8, 0.8); // Ajustez l'échelle si nécessaire
+            gamblingTableMesh = meshes[0];
+            gamblingTableMesh.position = new BABYLON.Vector3(x, y+0.8, z);
+            gamblingTableMesh.scaling = new BABYLON.Vector3(0.8, 0.8, 0.8);
 
             gamblingTableMesh.receiveShadows = true;
             gamblingTableMesh.isVisible = true;
         
-            // Activer les collisions pour la table
             gamblingTableMesh.checkCollisions = true;
             meshes.forEach(m => {
-              m.receiveShadows = true;  // ombres
+              m.receiveShadows = true;
               if (!(m.name == "__root__")) {
                 new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
               }
             });
 
-            // Créer une zone en cube autour de la table pour gérer les interactions
             miniGameZone = BABYLON.MeshBuilder.CreateBox("miniZone", { size: 6 }, scene);
-            miniGameZone.position = gamblingTableMesh.position.clone(); // Placez le cube au même endroit que la table
-            miniGameZone.isVisible = false; // Rendre le cube invisible (ou semi-transparent si nécessaire)
+            miniGameZone.position = gamblingTableMesh.position.clone();
+            miniGameZone.isVisible = false;
         
-            // Si vous voulez rendre le cube semi-transparent pour le débogage :
             const matZone = new BABYLON.StandardMaterial("zoneMat", scene);
-            matZone.diffuseColor = new BABYLON.Color3(1, 1, 0); // Jaune
-            matZone.alpha = 0.3; // 30% d’opacité
+            matZone.diffuseColor = new BABYLON.Color3(1, 1, 0);
+            matZone.alpha = 0.3;
             miniGameZone.material = matZone;
         
-            // Ajouter un gestionnaire d'actions pour la zone
             miniGameZone.actionManager = new BABYLON.ActionManager(scene);
         
-            // Quand le joueur entre dans la zone, on affiche l'UI
             miniGameZone.actionManager.registerAction(
                 new BABYLON.ExecuteCodeAction(
                     { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: { mesh: player.mesh } },
@@ -731,7 +653,6 @@ function createGamblingTable (x,y,z) {
                 )
             );
         
-            // Quand il sort, on cache l'UI
             miniGameZone.actionManager.registerAction(
                 new BABYLON.ExecuteCodeAction(
                     { trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: { mesh: player.mesh } },
@@ -746,8 +667,7 @@ function createGamblingTable (x,y,z) {
 
 function createPond(x,y,z) {
   BABYLON.SceneLoader.ImportMesh("", "images/", "pond.glb", scene, (meshes) => {
-    // On positionne le plan d'eau
-    pondMesh = meshes[0]; // On suppose que le premier mesh est le plan d'eau
+    pondMesh = meshes[0];
     pondMesh.position = new BABYLON.Vector3(x, y, z);
     pondMesh.receiveShadows = true;
     pondPosition = pondMesh.position.clone();
@@ -759,13 +679,11 @@ function createPond(x,y,z) {
       }
     });
   
-    // Création de la hit‑box invisible
     pondZone = BABYLON.MeshBuilder.CreateBox("pondZone", { size: 1 }, scene);
     pondZone.position        = pondMesh.position.clone();
     pondZone.isVisible       = false;
-    pondZone.checkCollisions = false;   // <-- remet la détection d’intersection
-    pondZone.isPickable      = false;  // n’interfère pas pour les clics
-    // Empêche physiquement le blocage sans désactiver checkCollisions :
+    pondZone.checkCollisions = false;
+    pondZone.isPickable      = false;
     pondZone.ellipsoid       = new BABYLON.Vector3(0,0,0);
     pondZone.ellipsoidOffset = new BABYLON.Vector3(0,0,0);
 
@@ -792,7 +710,6 @@ function createPond(x,y,z) {
       if (evt.key.toLowerCase() === "e") {
         document.exitPointerLock();
         fishingManager.show();
-        // Bloque les contrôles caméra et anime la vue
         camera.detachControl(canvas);
         animateCameraToFishingView();
         window.removeEventListener("keydown", onEnterFishing);
@@ -805,11 +722,10 @@ function createPond(x,y,z) {
 
 function createGround(scene, level) {
 
-  // Supprime les meshes importés précédemment
   if (importedMeshes.length > 0) {
       importedMeshes.forEach(mesh => mesh.dispose());
-      clearMovingPlatforms(scene); // Supprime les plateformes en mouvement
-      importedMeshes = []; // Réinitialise le tableau
+      clearMovingPlatforms(scene);
+      importedMeshes = [];
   }
 
   if (level === 1) {
@@ -820,22 +736,17 @@ function createGround(scene, level) {
         BABYLON.SceneLoader.ImportMesh("", "images/", "grass.glb", scene, function (grassMeshes) {
           importedMeshes = importedMeshes.concat(grassMeshes);
         });
-          // Stocke les meshes importés
           importedMeshes = importedMeshes.concat(meshes);
-          // Affectez chaque mesh importé au parent et activez les collisions
           meshes.forEach((mesh) => {
 
               mesh.checkCollisions = true;
               mesh.isPickable = false; 
               
-              // Active la réception des ombres
               mesh.receiveShadows = true;
-              // Ajoute le mesh comme caster d'ombres
 
-              // Corrige les matériaux problématiques
               if (mesh.material) {
-                mesh.material.unlit = false; // Désactive le mode "unlit" (sans éclairage)
-                mesh.material.freeze(); // Empêche les modifications ultérieures
+                mesh.material.unlit = false; 
+                mesh.material.freeze();
               }
 
               if (!(mesh.name == "__root__")) {
@@ -872,7 +783,7 @@ function createGround(scene, level) {
 
           console.log("Map t.glb chargée et ajustée pour le niveau 1");
 
-          createFinishPoint(175.3, 120, -54.3); // <-- coordonnées fixes
+          createFinishPoint(175.3, 120, -54.3);
 
           
 
@@ -881,7 +792,6 @@ function createGround(scene, level) {
           createGamblingTable (176.8,120,-22.9);
 
 
-          // 1) Crée tes plateformes statiques à partir de plat.glb
           
           const p1_from = new BABYLON.Vector3(120, 55, 25);
           const p1_to   = new BABYLON.Vector3(150, 55, 28);
@@ -897,10 +807,9 @@ function createGround(scene, level) {
       return null;
   } else if (level === 2) {
       BABYLON.SceneLoader.ImportMesh("", "images/", "niveau2.glb", scene, function (meshes) {
-          // Stocke les meshes importés
+
           importedMeshes = meshes;
 
-          // Affectez chaque mesh importé au parent et activez les collisions
           meshes.forEach((mesh) => {
               mesh.checkCollisions = true;
               mesh.isPickable = false; 
@@ -929,11 +838,10 @@ function createGround(scene, level) {
           createChest( -93, 30, 100,  `lvl1_chest1` );
           createChest( -94, 30, 111,  `lvl1_chest2` );
 
-          createFinishPoint(-67, 60, -136); // <-- coordonnées fixes
+          createFinishPoint(-67, 60, -136);
         createGamblingTable (-55,57,-147);
 
 
-          // GESTION DES ENNEMIS
 
           const paths = [
             [
@@ -952,7 +860,6 @@ function createGround(scene, level) {
             ]
           ];
           
-          // on donne aussi speed et range à chaque ennemi si besoin
           const configs = paths.map(p => ({
             path: p,
             speed: 0.057,
@@ -1008,35 +915,32 @@ function clearLevelObjects() {
 
 
 function createLights(scene) {
-  // 1) Fond d’écran un peu plus chaud
-  //    (remplacez votre clearColor actuelle)
-  scene.clearColor = new BABYLON.Color3(0.2, 0.15, 0.1); // brun très foncé tirant sur le cuivré
+  scene.clearColor = new BABYLON.Color3(0.2, 0.15, 0.1);
 
-  // 2) Lumière hémisphérique douce et chaude
   const hemi = new BABYLON.HemisphericLight("hemiLight",
     new BABYLON.Vector3(0, 1, 0), scene);
-  hemi.diffuse     = new BABYLON.Color3(1.0, 0.8, 0.6);  // couleur principale (blanc chaud)
-  hemi.specular    = new BABYLON.Color3(0.4, 0.3, 0.3);  // reflets doux
-  hemi.groundColor = new BABYLON.Color3(0.2, 0.1, 0.05); // sous-sol très sombre
-  hemi.intensity   = 0.6;                               // plus tamisée
+  hemi.diffuse     = new BABYLON.Color3(1.0, 0.8, 0.6);
+  hemi.specular    = new BABYLON.Color3(0.4, 0.3, 0.3);
+  hemi.groundColor = new BABYLON.Color3(0.2, 0.1, 0.05);
+  hemi.intensity   = 0.6;
 
-  // 3) Lumière directionnelle (soleil / lampe) orangée
+
   const dir = new BABYLON.DirectionalLight("dirLight",
     new BABYLON.Vector3(-0.5, -1, -0.5), scene);
   dir.position  = new BABYLON.Vector3(30, 50, -20);
-  dir.diffuse   = new BABYLON.Color3(1.0, 0.85, 0.6);    // ton chaud, façon coucher de soleil
+  dir.diffuse   = new BABYLON.Color3(1.0, 0.85, 0.6);
   dir.specular  = new BABYLON.Color3(0.5, 0.4, 0.3);
   dir.intensity = 0.7;
 
-  // 4) Petite lampe d’appoint (point light) pour renforcer l’ambiance
+
   const lamp = new BABYLON.PointLight("lampLight",
     new BABYLON.Vector3(0, 5, 0), scene);
-  lamp.diffuse   = new BABYLON.Color3(1.0, 0.7, 0.3);    // orange doux
+  lamp.diffuse   = new BABYLON.Color3(1.0, 0.7, 0.3);
   lamp.specular  = new BABYLON.Color3(0.3, 0.2, 0.1);
   lamp.intensity = 0.3;
   lamp.range     = 20;
 
-  // 5) (Optionnel) un léger glow pour adoucir les hautes lumières
+
   const glow = new BABYLON.GlowLayer("glow", scene, {
     intensity: 0.3,
     mainTextureSamples: 4
@@ -1171,14 +1075,14 @@ function modifySettings() {
 }
 
 function startTimer(duration) {
-  // Si un timer était déjà en cours, on l’arrête
+
   if (timerInterval) {
     clearInterval(timerInterval);
   }
   timeLeft = duration;
   console.log("[DEBUG] startTimer() level", currentLevel, "timeLeft =", timeLeft);
 
-  // Mise à jour immédiate de l’affichage
+
   document.getElementById("timer").textContent = timeLeft;
 
   timerInterval = setInterval(() => {
@@ -1188,14 +1092,14 @@ function startTimer(duration) {
       clearInterval(timerInterval);
       engine.stopRenderLoop();
 
-      // Affiche l’écran You Lose
+
       const loseMenu = document.getElementById("loseMenu");
       loseMenu.style.display = "flex";
       document.exitPointerLock();
 
-      // Bouton Retry
+
       document.getElementById("retryButton").onclick = () => {
-        // Recharger la page pour tout réinitialiser
+
         window.location.reload();
       };
     }
@@ -1231,17 +1135,16 @@ function levelComplete() {
 }
 
 function openShopInterface() {
-  // 1) On pause le jeu et on stoppe le timer
+
   gamePaused = true;
   clearInterval(timerInterval);
 
-  // 2) On affiche l’interface shop
+
   const shopInterface = document.getElementById("shopInterface");
-  shopInterface.style.display = "flex";    // annule tout display:none inline
+  shopInterface.style.display = "flex";
   shopInterface.classList.add("show");
   document.exitPointerLock();
 
-  // 3) On rattache tous les handlers de boutons
   document.getElementById("buyRange").onclick            = buyRangeBonus;
   document.getElementById("buyFreeze").onclick           = buyFreezeBonus;
   document.getElementById("buySpeed").onclick            = buySpeedBonus;
@@ -1255,7 +1158,6 @@ function openShopInterface() {
 function closeShopInterface() {
   const shopInterface = document.getElementById("shopInterface");
   shopInterface.classList.remove("show");
-  // remove inline
   shopInterface.style.display = "none";
 
   canvas.requestPointerLock();
@@ -1268,7 +1170,7 @@ function buyRangeBonus() {
   if (euros >= 10) {
     euros -= 10;
     audioManager.play("purchase");
-    currentRangeMult += 0.2; // Augmente la portée de ramassage de 0.2
+    currentRangeMult += 0.2;
     player.pickupBox.scaling = player.pickupBox.scaling.multiplyByFloats(currentRangeMult, currentRangeMult, currentRangeMult);
     updateEurosUI();
     showToast("Range upgraded ! Actual multiplied : "+ currentRangeMult +".",2500);
@@ -1285,7 +1187,7 @@ function buyFreezeBonus(){
     euros -= 25;
     audioManager.play("purchase");
     freezeBought = true;
-    addSkillIcon("iconFreeze","images/gel.png",freezeCooldownDuration);   // <<< NEW icône
+    addSkillIcon("iconFreeze","images/gel.png",freezeCooldownDuration);
     updateEurosUI();
     showToast("Freeze unlocked !");
     document.getElementById("item-buyFreeze").style.display = "none";
@@ -1294,7 +1196,6 @@ function buyFreezeBonus(){
   }
 }
 
-// Change dynamiquement l’image d’une aptitude déjà placée
 function update_skillicon(id, newSrc){
   const img = document.getElementById(id);
   if (img) img.src = newSrc;
@@ -1305,22 +1206,17 @@ function triggerFreeze() {
   freezeCooldown = true;
   lastFreezeTime = Date.now();
 
-  // change l’icône pour indiquer le cooldown
   update_skillicon("iconFreeze", "images/gel_cd.png");
   showToast("Freeze activated ! 5 s");
 
-  // applique le gel
   enemiesManager.enemies.forEach(e => e.freeze(5000));
 
-  // fin de l’effet de gel au bout de 5 s
   setTimeout(() => {
-    // dégel
     enemiesManager.enemies.forEach(e => e.frozen = false);
     freezeActive = false;
   }, 5000);
 
   startCooldown("iconFreeze");
-  // fin du cooldown au bout de 60 s
   setTimeout(() => {
     freezeCooldown = false;
     update_skillicon("iconFreeze", "images/gel.png");
@@ -1349,7 +1245,6 @@ function buySpeedBonus() {
     euros    -= 25;
     audioManager.play("purchase");
     speedBought = true;
-    // ajoute l’icône avec son cooldown
     addSkillIcon("iconSpeed", "images/speed.png", speedCooldownDuration);
     updateEurosUI();
     showToast("Speed boost unlocked !");
@@ -1367,43 +1262,33 @@ function triggerSpeed() {
   update_skillicon("iconSpeed", "images/speed_cd.png");
   showToast("Speed boost activated ! 10 s");
 
-  // applique le multiplicateur
   player.speedMult = 1.5;
 
 
-  // --- NOUVEAU : création du système de particules sous les pieds ---
-  // 1) Emplacement sous les pieds
   const emitterNode = new BABYLON.TransformNode("speedEmitter", scene);
   emitterNode.parent   = player.mesh;
-  emitterNode.position = new BABYLON.Vector3(0, 0.1, 0); // 2 unités sous le centre
+  emitterNode.position = new BABYLON.Vector3(0, 0.1, 0);
 
-  // 2) Création du ParticleSystem
   const ps = new BABYLON.ParticleSystem("speedPS", 150, scene);
-  ps.particleTexture = new BABYLON.Texture("images/flare.png", scene); // ou un sprite fin
+  ps.particleTexture = new BABYLON.Texture("images/flare.png", scene);
 
-  // 3) On émet dans un petit volume plat sous les pieds
   const box = new BABYLON.BoxParticleEmitter();
   box.minEmitBox = new BABYLON.Vector3(-1, 0, -0.5);
   box.maxEmitBox = new BABYLON.Vector3( 1, 0,  0.5);
   ps.particleEmitterType = box;
 
-  // 4) Couleurs jaune vif
-  ps.color1    = new BABYLON.Color4(1, 1, 0,   1.0);  // jaune opaque
-  ps.color2    = new BABYLON.Color4(1, 1, 0.2, 0.6);  // jaune semi-transparent
-  ps.colorDead = new BABYLON.Color4(1, 1, 0,   0.0);  // disparaît
+  ps.color1    = new BABYLON.Color4(1, 1, 0,   1.0);
+  ps.color2    = new BABYLON.Color4(1, 1, 0.2, 0.6);
+  ps.colorDead = new BABYLON.Color4(1, 1, 0,   0.0);
 
-  // 5) Traits très fins
   ps.minSize     = 0.05;
   ps.maxSize     = 0.1;
 
-  // 6) Très courte durée de vie
   ps.minLifeTime = 0.2;
   ps.maxLifeTime = 0.4;
 
-  // 7) Pas beaucoup de particules
   ps.emitRate    = 200;
 
-  // 8) Direction vers le bas (soit juste sous le joueur)
   ps.direction1 = new BABYLON.Vector3(0, -1, 0);
   ps.direction2 = new BABYLON.Vector3(0, -2, 0);
   ps.gravity    = new BABYLON.Vector3(0, -9.81, 0);
@@ -1412,26 +1297,21 @@ function triggerSpeed() {
   ps.emitter     = emitterNode;
   ps.start();
 
-  // → Arrêter le système à la fin du boost (10 s)
   setTimeout(() => {
     ps.stop();
-    // donner un petit délai pour bien tout nettoyer
     setTimeout(() => {
       ps.dispose();
       emitterNode.dispose();
     }, 500);
   }, speedDuration);
-  // --- FIN de l’effet particules ---
 
 
-  // fin de l’effet au bout de 10 s
   setTimeout(() => {
     player.speedMult = 1.0;
     speedActive = false;
   }, speedDuration);
 
   startCooldown("iconSpeed");
-  // recharge …
   setTimeout(() => {
     speedCooldown = false;
     update_skillicon("iconSpeed", "images/speed.png");
@@ -1471,12 +1351,10 @@ function buyInsuranceBonus() {
 
 function handlePlayerDeath( counter) {
 
-  if (playerDead || invulnerable) return;   // ← Ajouté
+  if (playerDead || invulnerable) return; 
   playerDead = true;
-  gamePaused = true;            // stoppe IA, déplacements, etc.
+  gamePaused = true; 
 
-
-  // UI
   const deathScreen   = document.getElementById("deathScreen");
   const respawnSpan   = document.getElementById("respawnTimer");
   respawnSpan.textContent = counter;
@@ -1493,14 +1371,12 @@ function handlePlayerDeath( counter) {
   }, 1000);
 }
 
-// Affiche un message court pendant une durée donnée
 function showToast(message, duration = 2000) {
   const t = document.getElementById("toast");
   t.textContent   = message;
   t.style.opacity = "1";
   t.style.display = "block";
 
-  // disparition progressive
   setTimeout(() => {
     t.style.transition = "opacity .5s";
     t.style.opacity    = "0";
@@ -1512,18 +1388,15 @@ function showToast(message, duration = 2000) {
 }
 
 function respawnPlayer() {
-  // remet le lapin à son spawn
   player.reset_position(scene);
   enemiesManager.resetAll();
 
-  // cache l’UI
   document.getElementById("deathScreen").style.display = "none";
   canvas.requestPointerLock();
 
   playerDead = false;
   gamePaused = false;
 
-  // 1 s de grâce pour sortir de la hit‑box
   invulnerable = true;
   setTimeout(() => invulnerable = false, 1000);
 }
@@ -1588,10 +1461,8 @@ function nextLevel() {
     orbsTarget = currentLevel * 5;
     collectedOrbs = 0;
 
-     // 1) On replace immédiatement le joueur au spawn
      player.reset_position(scene);
 
-     // 2) Puis on (ré‑)initialise invulnérabilité si besoin
      invulnerable = true;
      setTimeout(() => invulnerable = false, 1000);
 
@@ -1602,25 +1473,20 @@ function nextLevel() {
     console.log("[DEBUG] nextLevel() après unpause, gamePaused=", gamePaused);
 
     clearInterval(timerInterval);
-    startTimer(timerDuration); // redémarre le timer
+    startTimer(timerDuration);
 
-    // Dispose les objets spécifiques du niveau précédent (coffre, table...)
     clearLevelObjects();
 
-    // Dispose les orbes du niveau précédent
     orbsManager.orbs.forEach(orb => orb.dispose());
 
-    // Réinitialise le manager d'orbes pour le nouveau niveau
     orbsManager = new OrbsManager(scene);
 
-    // Charge le nouveau niveau
     ground = createGround(scene, currentLevel);
 
 
 
     canvas.requestPointerLock();
     console.log("Niveau", currentLevel, "lancé");
-    // Réinitialiser la position du joueur à son point de départ
     
   } else {
     alert("Félicitations, vous avez terminé les niveaux");
