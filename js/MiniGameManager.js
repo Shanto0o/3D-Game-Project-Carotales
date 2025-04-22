@@ -1,8 +1,5 @@
 export default class MiniGameManager {
-    /**
-     * @param {function(): number} getEuros   // renvoie le solde courant
-     * @param {function(number): void} setEuros // applique le nouveau solde
-     */
+
     constructor(getEuros, setEuros) {
       this.interface = document.getElementById("miniGameInterface");
       this.resultDiv = document.getElementById("diceResult");
@@ -14,7 +11,6 @@ export default class MiniGameManager {
       this.playsLeft = this.maxPlays;
       this.am = null;
   
-      // Crée les éléments <img> pour les dés
       this.img1 = document.createElement('img');
       this.img2 = document.createElement('img');
       [this.img1, this.img2].forEach(img => {
@@ -22,7 +18,6 @@ export default class MiniGameManager {
         img.style.height = '50px';
         img.style.margin = '0 5px';
       });
-      // Zone d'affichage: images + texte
       this.resultDiv.innerHTML = '';
       this.resultDiv.append(this.img1, this.img2, document.createElement('br'));
       this.textResult = document.createElement('div');
@@ -41,7 +36,6 @@ export default class MiniGameManager {
     showInterface() {
       this.interface.style.display = "block";
       this.updatePlaysDisplay();
-      // réinitialise les images et texte
       this.img1.src = `images/dice1.png`;
       this.img2.src = `images/dice6.png`;
       this.textResult.textContent = '';
@@ -64,7 +58,6 @@ export default class MiniGameManager {
       this.playsLeft--;
       this.updatePlaysDisplay();
   
-      // désactiver le bouton pendant l'animation
       this.playBtn.disabled = true;
       this.textResult.textContent = "Rolling the dice...";
       this.am.play("dice");
@@ -73,7 +66,6 @@ export default class MiniGameManager {
       const anim = setInterval(() => {
         const a = Math.floor(Math.random() * 6) + 1;
         const b = Math.floor(Math.random() * 6) + 1;
-        // afficher faces d'animation aléatoires
         this.img1.src = `images/dice${a}.png`;
         this.img2.src = `images/dice${b}.png`;
         frames++;
@@ -85,11 +77,9 @@ export default class MiniGameManager {
     }
   
     performRoll() {
-      // débiter la mise
       let nouveauSolde = this.getEuros() - 10;
       this.setEuros(nouveauSolde);
   
-      // résultat
       const d1 = Math.floor(Math.random() * 6) + 1;
       const d2 = Math.floor(Math.random() * 6) + 1;
       const sum = d1 + d2;
@@ -102,20 +92,16 @@ export default class MiniGameManager {
         this.am.play("fishnorm");}
       else {gain -= 7;
       this.am.play("fail");}
-      // afficher les vraies faces
       this.img1.src = `images/dice${d1}.png`;
       this.img2.src = `images/dice${d2}.png`;
   
-      // appliquer le gain
       nouveauSolde += gain;
       this.setEuros(nouveauSolde);
   
-      // affichage du texte résultat
       this.textResult.innerHTML =
         `Results: ${d1} + ${d2} = ${sum}<br>` +
         `You ${gain > 0 ? "won" : "lose"} ${gain} €`;
   
-      // réactiver le bouton si des essais restent
       this.playBtn.disabled = this.playsLeft <= 0;
     }
   }
