@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Carotales</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
     <style>
 
     @font-face {
@@ -320,6 +321,53 @@
       #loseMenu button:active {
         transform: scale(0.95);
       }
+      #endScreen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  background: transparent;     /* <- transparent now */
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+#endScreen.visible {
+  display: flex;
+}
+
+/* La card garde le fond semi‑opaque */
+#endScreen .card {
+  text-align: center;
+  background: rgba(255,255,255,0.9);  /* only the card */
+  padding: 40px 60px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+#endScreen .card h1 {
+  font-size: 3rem;
+  color: #9c27b0;
+  text-shadow: 0 0 8px rgba(156,39,176,0.6);
+  margin-bottom: 0.5em;
+}
+#endScreen .card p {
+  font-size: 1.25rem;
+  margin-bottom: 1.5em;
+  color: #555;
+}
+#endScreen .card button {
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, #ff9de2, #fad0c4);
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+#endScreen .card button:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+#endScreen .card button:active {
+  transform: translateY(1px) scale(0.98);
+}
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -517,6 +565,14 @@
                 border-radius:4px;
                 min-width:100px;">
       5 sec remaining
+    </div>
+  </div>
+
+  <div id="endScreen">
+    <div class="card">
+      <h1>You finished the game!</h1>
+      <p>Congratulations, brave rabbit! 🐰🥕✨</p>
+      <button id="restartButton">Play Again</button>
     </div>
   </div>
 
