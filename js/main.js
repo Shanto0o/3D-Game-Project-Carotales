@@ -286,7 +286,7 @@ async function startGame() {
     audioManager.load("fishnorm", "images/fishnormal.wav"),
     audioManager.load("dice", "images/dice.wav"),
     audioManager.load("fail", "images/fail.wav"),
-    audioManager.load("chest", "images/chest.wav"),
+    audioManager.load("chest", "images/chest.mp3"),
 
     // ajoutez d’autres sons ici…
   ]);
