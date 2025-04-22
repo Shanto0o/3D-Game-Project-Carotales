@@ -40,7 +40,7 @@ let invulnerable = false;  // invulnérabilité temporaire après respawn
 
 // Système de niveaux
 let currentLevel = 1;
-const maxLevel = 3;
+const maxLevel = 2;
 let orbsTarget = currentLevel * 5; // Exemple : niveau 1 = 5 orbes, niveau 2 = 10, etc.
 let collectedOrbs = 0; // Compteur d'orbes collectées 
 
@@ -913,12 +913,12 @@ function createGround(scene, level) {
 
           });
           const spawnPositions = [
-              new BABYLON.Vector3(6,10   ,58 ),
-              new BABYLON.Vector3(-33,20 ,95 ),
-              new BABYLON.Vector3(-96,23 , 184),
-              new BABYLON.Vector3(-116,28 ,164 ),
-              new BABYLON.Vector3(-120,30 ,134 ),
-              new BABYLON.Vector3(-116,34 ,107 ),
+              new BABYLON.Vector3(6,5   ,58 ),
+              new BABYLON.Vector3(-33,15 ,95 ),
+              new BABYLON.Vector3(-96,18 , 184),
+              new BABYLON.Vector3(-116,23 ,164 ),
+              new BABYLON.Vector3(-120,25 ,134 ),
+              new BABYLON.Vector3(-116,29 ,107 ),
 
           ];
 
@@ -926,8 +926,8 @@ function createGround(scene, level) {
 
           console.log("Map t.glb chargée et ajustée pour le niveau 1");
 
-          createChest( -93, 31, 100,  `lvl1_chest1` );
-          createChest( -94, 31, 111,  `lvl1_chest1` );
+          createChest( -93, 30, 100,  `lvl1_chest1` );
+          createChest( -94, 30, 111,  `lvl1_chest2` );
 
           createFinishPoint(-67, 60, -136); // <-- coordonnées fixes
         createGamblingTable (-55,57,-147);
