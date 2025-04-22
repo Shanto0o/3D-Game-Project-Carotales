@@ -400,6 +400,9 @@ function createMovingPlatform(scene, p_from, p_to, speed = 2) {
     }
 
     const platform = BABYLON.Mesh.MergeMeshes(validMeshes, true, true, undefined, false, true);
+
+    // ** Ombres **
+    platform.receiveShadows = true;
     if (!platform) {
       console.error("Échec de la fusion des meshes de la plateforme.");
       return;
@@ -452,18 +455,18 @@ function clearMovingPlatforms(scene) {
 }
 
 function createChest(x, y, z, chestId) {
-  BABYLON.SceneLoader.ImportMesh(
-    "", "images/", "chest.glb", scene,
+  BABYLON.SceneLoader.ImportMesh("", "images/", "chest.glb", scene,
     (meshes, particleSystems, skeletons, animationGroups) => {
-      // Arrête toute anim du GLB
       animationGroups.forEach(g => g.stop());
       const chest = meshes[0];
-      chest.position = new BABYLON.Vector3(x, y, z);
+      chest.position.set(x, y, z);
       chest.scaling  = new BABYLON.Vector3(4, 4, 4);
+
+      // ** Ombres **
+      chest.receiveShadows = true;
+
       chest.checkCollisions = false;
-      // Stocke dans la liste
       chests.push({ mesh: chest, id: chestId });
-      // Initialise son état
       chestOpened[chestId] = false;
     }
   );
@@ -472,6 +475,15 @@ function createChest(x, y, z, chestId) {
 function createScene() {
   
   let scene = new BABYLON.Scene(engine);
+  
+
+  // Exponential fog très léger
+scene.fogMode    = BABYLON.Scene.FOGMODE_EXP2;
+scene.fogColor   = new BABYLON.Color3(0.8, 0.9, 1.0); // bleu très pâle
+scene.clearColor = new BABYLON.Color3(0.8, 0.9, 1.0); // assortir le skybox background
+scene.fogDensity = 0.0014;  // <– 0.008 → 0.0015 (ou encore plus petit, essayez 0.0008)       
+
+
   var gravityVector = new BABYLON.Vector3(0, -9.81, 0);
   const physicsPlugin = new BABYLON.HavokPlugin(false);
   scene.enablePhysics(gravityVector, physicsPlugin);
@@ -551,11 +563,9 @@ function createScene() {
 
 
   // Par exemple juste après avoir instancié player et enemiesManager :
-  scene._shadowGenerator.addShadowCaster(player.mesh);
 
   // Pour chaque ennemi importé :
   enemiesManager.enemies.forEach(e => {
-    scene._shadowGenerator.addShadowCaster(e.mesh);
   });
 
   BABYLON.SceneLoader.ImportMesh(
@@ -632,6 +642,8 @@ function createFinishPoint(x , y, z) {
   BABYLON.SceneLoader.ImportMesh("", "images/", "finish.glb", scene, (meshes) => {
       const finishModel = meshes[0]; // On suppose que le premier mesh est le modèle principal
       finishModel.parent = finishMesh; // Attacher le modèle à la boîte
+
+      finishModel.receiveShadows = true;
       // tourner le panneau de 90° vers la droite
       finishModel.rotation.y = Math.PI / 2; // Ajuster la rotation si nécessaire
       finishModel.scaling = new BABYLON.Vector3(1, 1, -1); // Ajuster l'échelle si nécessaire
@@ -646,6 +658,8 @@ function createGamblingTable (x,y,z) {
             gamblingTableMesh = meshes[0]; // On suppose que le premier mesh est la table
             gamblingTableMesh.position = new BABYLON.Vector3(x, y, z); // Ajustez les coordonnées
             gamblingTableMesh.scaling = new BABYLON.Vector3(4, 4, 4); // Ajustez l'échelle si nécessaire
+
+            gamblingTableMesh.receiveShadows = true;
             gamblingTableMesh.isVisible = true;
         
             // Activer les collisions pour la table
@@ -706,6 +720,7 @@ function createPond(x,y,z) {
   BABYLON.SceneLoader.ImportMesh("", "images/", "pond.glb", scene, (meshes) => {
     // On positionne le plan d'eau
     meshes[0].position = new BABYLON.Vector3(x, y, z);
+    meshes[0].receiveShadows = true;
     pondPosition = meshes[0].position.clone();
     meshes.forEach(m => {
       m.checkCollisions  = true;
@@ -770,6 +785,7 @@ function createGround(scene, level) {
 
   if (level === 1) {
       BABYLON.SceneLoader.ImportMesh("", "images/", "niveau1.glb", scene, function (meshes) {
+        console.log("Import niveau", level, ":", meshes.map(m => `${m.name} → ${m.getClassName()}`)); 
 
 
         BABYLON.SceneLoader.ImportMesh("", "images/", "grass.glb", scene, function (grassMeshes) {
@@ -779,12 +795,25 @@ function createGround(scene, level) {
           importedMeshes = importedMeshes.concat(meshes);
           // Affectez chaque mesh importé au parent et activez les collisions
           meshes.forEach((mesh) => {
+
               mesh.checkCollisions = true;
               mesh.isPickable = false; 
+              
+              // Active la réception des ombres
+              mesh.receiveShadows = true;
+              // Ajoute le mesh comme caster d'ombres
+
+              // Corrige les matériaux problématiques
+              if (mesh.material) {
+                mesh.material.unlit = false; // Désactive le mode "unlit" (sans éclairage)
+                mesh.material.freeze(); // Empêche les modifications ultérieures
+              }
+
               if (!(mesh.name == "__root__")) {
                 new BABYLON.PhysicsAggregate(mesh, BABYLON.PhysicsShapeType.MESH);
               }
 
+              
           });
           
           const spawnPositions = [
@@ -847,9 +876,12 @@ function createGround(scene, level) {
           meshes.forEach((mesh) => {
               mesh.checkCollisions = true;
               mesh.isPickable = false; 
+              mesh.receiveShadows = true;  
               if (!(mesh.name == "__root__")) {
                 new BABYLON.PhysicsAggregate(mesh, BABYLON.PhysicsShapeType.MESH);
               }
+
+  
 
           });
           const spawnPositions = [
@@ -927,24 +959,39 @@ function clearLevelObjects() {
 
 
 function createLights(scene) {
-  // Lumière ambiante douce
+  // 1) Fond d’écran un peu plus chaud
+  //    (remplacez votre clearColor actuelle)
+  scene.clearColor = new BABYLON.Color3(0.2, 0.15, 0.1); // brun très foncé tirant sur le cuivré
+
+  // 2) Lumière hémisphérique douce et chaude
   const hemi = new BABYLON.HemisphericLight("hemiLight",
     new BABYLON.Vector3(0, 1, 0), scene);
-  hemi.intensity = 0.4;
+  hemi.diffuse     = new BABYLON.Color3(1.0, 0.8, 0.6);  // couleur principale (blanc chaud)
+  hemi.specular    = new BABYLON.Color3(0.4, 0.3, 0.3);  // reflets doux
+  hemi.groundColor = new BABYLON.Color3(0.2, 0.1, 0.05); // sous-sol très sombre
+  hemi.intensity   = 0.6;                               // plus tamisée
 
-  // Lumière directionnelle pour les ombres
+  // 3) Lumière directionnelle (soleil / lampe) orangée
   const dir = new BABYLON.DirectionalLight("dirLight",
-    new BABYLON.Vector3(-1, -2, 1), scene);
-  dir.position = new BABYLON.Vector3(20, 40, 20);
-  dir.intensity = 1.0;
+    new BABYLON.Vector3(-0.5, -1, -0.5), scene);
+  dir.position  = new BABYLON.Vector3(30, 50, -20);
+  dir.diffuse   = new BABYLON.Color3(1.0, 0.85, 0.6);    // ton chaud, façon coucher de soleil
+  dir.specular  = new BABYLON.Color3(0.5, 0.4, 0.3);
+  dir.intensity = 0.7;
 
-  // ShadowGenerator de résolution 2048px
-  const shadowGen = new BABYLON.ShadowGenerator(2048, dir);
-  shadowGen.useBlurExponentialShadowMap = true;       // ombres plus douces
-  shadowGen.blurKernel = 32;                          // flou
+  // 4) Petite lampe d’appoint (point light) pour renforcer l’ambiance
+  const lamp = new BABYLON.PointLight("lampLight",
+    new BABYLON.Vector3(0, 5, 0), scene);
+  lamp.diffuse   = new BABYLON.Color3(1.0, 0.7, 0.3);    // orange doux
+  lamp.specular  = new BABYLON.Color3(0.3, 0.2, 0.1);
+  lamp.intensity = 0.3;
+  lamp.range     = 20;
 
-  // Exposez le shadowGen pour pouvoir y ajouter vos casters plus tard
-  scene._shadowGenerator = shadowGen;
+  // 5) (Optionnel) un léger glow pour adoucir les hautes lumières
+  const glow = new BABYLON.GlowLayer("glow", scene, {
+    intensity: 0.3,
+    mainTextureSamples: 4
+  });
 }
 
 function createThirdPersonCamera(scene, target) {
