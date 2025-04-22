@@ -49,6 +49,7 @@ export default class FishingManager {
     this.isFishing = false;
     this.interface.style.display = "none";
     window.removeEventListener("keydown", this._onKeyDown);
+    window.dispatchEvent(new Event('fishingEnded'));
   }
 
   _onKeyDown(evt) {
