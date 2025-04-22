@@ -952,6 +952,15 @@ function clearLevelObjects() {
     miniGameTriggerZone = null;
   }
 
+  if (pondMesh) {
+    pondMesh.dispose();
+    pondMesh = null;
+  }
+  if (pondZone) {
+    pondZone.dispose();
+    pondZone = null;
+  }
+
 
 }
 
