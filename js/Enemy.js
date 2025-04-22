@@ -31,6 +31,9 @@ export default class Enemy {
     this.model.scaling = new BABYLON.Vector3(1, 1, 1);
     BABYLON.SceneLoader.ImportMesh('', 'images/', 'bee.glb', scene, meshes => {
       meshes.forEach(m => {
+        // ** Ombres ** : reçoit et projette
+        m.receiveShadows = true;
+
         if (!m.parent) m.parent = this.model;
       });
     });
