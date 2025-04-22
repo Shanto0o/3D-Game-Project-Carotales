@@ -1110,7 +1110,7 @@ function modifySettings() {
         break;
       case "i":
         if (inspecting) {
-          inpecting = false;
+          inspecting = false;
           scene.debugLayer.hide();
         } else {
           scene.debugLayer.show();
