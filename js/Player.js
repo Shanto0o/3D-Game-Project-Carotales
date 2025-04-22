@@ -11,7 +11,7 @@ export default class Player {
     this.am = null;
 
 
-    this.debugFly = true;  // ← nouveau
+    this.debugFly = false;  // ← nouveau
    
     this.controller = new BABYLON.PhysicsCharacterController(this.mesh.position, {capsuleHeight: 2, capsuleRadius: 0.5}, scene);
     this.orientation = BABYLON.Quaternion.Identity();
