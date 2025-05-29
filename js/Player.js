@@ -4,12 +4,12 @@ export default class Player {
     this.mesh = BABYLON.MeshBuilder.CreateCapsule("playerCollision", { diameter: 2, height: 0.5 }, scene);
     this.mesh.position.y = 3;
     this.mesh.scaling = new BABYLON.Vector3(4, 4, 4);
-    this.speed = 24;
+    this.speed = 12;
     this.speedMult = 1.0; 
     this.am = null;
 
 
-    this.debugFly = true; 
+    this.debugFly = false; 
    
     this.controller = new BABYLON.PhysicsCharacterController(this.mesh.position, {capsuleHeight: 2, capsuleRadius: 0.5}, scene);
     this.orientation = BABYLON.Quaternion.Identity();
