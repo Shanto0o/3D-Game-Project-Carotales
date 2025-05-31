@@ -28,19 +28,21 @@
       #renderCanvas {
         width: 100%;
         height: 100%;
+        z-index: 0;
         touch-action: none;
       }
       #timerDisplay {
         display : none
       }
       #menu {
-        position: absolute;
-        left: 68%;
-        top: 35%;
-        z-index: 100;
-        background: transparent;
-        padding: 0;
-      } 
+  position: absolute;
+  left: 20%;            /* déplace tout le menu à gauche */
+  top: 35%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  z-index: 100;
+}
       #shopInterface {
       position: absolute;
       inset: 0;
@@ -165,11 +167,9 @@
         top: 60px;
       }
       #playButton {
-      width: 280px;
-      height: auto;
-      cursor: pointer;
-      transition: transform .15s ease;
-    }
+  width: 280px;          /* taille souhaitée */
+  margin-bottom: 16px;   /* espace sous Play */
+}
     #playButton:hover { transform: scale(1.05); }
     #playButton:active {
       transform: scale(0.95);
@@ -299,6 +299,14 @@
         justify-content: center;
         z-index: 10000;
       }
+      #shopEurosDisplay {
+  width: 100%;
+  text-align: right;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+  color: white;
+  text-shadow: 0 0 4px rgba(0,0,0,0.7);
+}
       #loseMenu h1 {
         font-size: 4rem;
         color: #9b59b6;
@@ -409,6 +417,311 @@
   transform: translateY(1px) scale(0.98);
 }
 
+/* Styles pour faire ressortir le bouton “Niveau Suivant” */
+#item-niveauSuivant img {
+  /* légère oscillation de taille sur l’icône */
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+#item-niveauSuivant button {
+  background: linear-gradient(45deg, #ff9f1c, #ffbf69);
+  color: #fff;
+  font-size: 1.25rem;
+  padding: 12px 24px;
+  border: 2px solid #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(255, 191, 105, 0.8);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+#item-niveauSuivant button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(255, 191, 105, 1);
+}
+/* ========== Panneau global ========== */
+/* ===================== Panneau plein écran ===================== */
+#customizePanel {
+  display: none;
+  position: fixed;           /* reste calé à l’écran */
+  top: 5vh;                  /* 5% du haut */
+  left: 5vw;                 /* 5% du côté gauche */
+  right: 5vw;                /* 5% du côté droit */
+  bottom: 5vh;               /* 5% du bas */
+  background: rgba(255, 240, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(180, 120, 255, 0.3);
+  overflow-y: auto;          /* scroll si besoin */
+  padding: 20px;
+  font-family: 'Caveat', cursive;
+  color: #4c004c;
+}
+
+/* Titre centré */
+#customizePanel h3 {
+  margin: 0 0 16px;
+  font-size: 1.8em;
+  text-align: center;
+}
+
+/* Fieldsets larges */
+#customizePanel fieldset {
+  background: rgba(255, 255, 255, 0.6);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+/* Texte de légende */
+#customizePanel legend {
+  font-weight: bold;
+  font-size: 1.2em;
+  padding: 0 6px;
+}
+
+/* Boutons */
+#customizePanel button {
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff9de2 0%, #fad0c4 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 1em;
+  color: #4c004c;
+  margin: 12px 8px 0 0;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#customizePanel button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 16px rgba(180, 120, 255, 0.6);
+}
+
+/* ========== Options + icônes ========== */
+.accessory-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  transition: background 0.2s;
+}
+.accessory-option:hover {
+  background: rgba(255, 200, 255, 0.3);
+}
+
+/* Regroupe le radio et le label */
+.accessory-option input {
+  margin: 0;
+  margin-right: 8px;
+}
+
+/* Texte de l’option */
+.accessory-option span {
+  flex-grow: 1;     /* prend l’espace central */
+  text-align: left;
+}
+
+/* Icônes réduites */
+.accessory-option img {
+  width: 24px;
+  height: 24px;
+  margin-left: 12px;
+  filter: drop-shadow(0 0 3px rgba(200, 150, 255, 0.6));
+  transition: transform 0.2s;
+}
+.accessory-option:hover img {
+  transform: scale(1.1);
+}
+
+/* 1) Toujours au-dessus du menu */
+#customizePanel {
+  z-index: 1000;  /* > 100 de #menu */
+}
+
+/* 2) Enlève les <br> sous les labels */
+#customizePanel br {
+  display: none;
+}
+
+/* 3) Passe chaque fieldset en grille compacte */
+#customizePanel fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 colonnes égales */
+  gap: 6px 12px;                         /* petit espacement */
+  padding: 8px;
+}
+
+/* 4) Fais des labels flex pour aligner radio / texte / icône */
+#customizePanel fieldset > label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 5) Icônes vraiment petites */
+#customizePanel fieldset > label img {
+  width: 80px;
+  height: 80px;
+  margin-left: 6px;
+  filter: drop-shadow(0 0 2px rgba(200,150,255,0.6));
+}
+
+/* 6) Ajuste l’espacement interne si besoin */
+#customizePanel {
+  padding: 12px;
+}
+#customizeBtn {
+  width: 280px;
+  height: auto;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+
+#customizeBtn:hover {
+  transform: scale(1.05);
+}
+#menuActions {
+  display: flex;
+  gap: 10px;             /* espace entre Customize et Options */
+} 
+#customizeBtn,
+#optionBtn {
+  width: 140px;          /* moitié de la taille du Play par exemple */
+}
+
+#customizeBtn:active {
+  transform: scale(0.95);
+}
+
+#optionBtn {
+  width: 280px;
+  height: auto;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+
+#optionBtn:hover {
+  transform: scale(1.05);
+}
+
+#optionBtn:active {
+  transform: scale(0.95);
+}
+
+#optionsPanel {
+  display: none;                   /* reste masqué tant qu’on ne clique pas */
+  position: fixed;                 /* plein écran, comme #customizePanel */
+  top: 5vh;                        /* 5 % depuis le haut */
+  left: 5vw;                       /* 5 % depuis la gauche */
+  right: 5vw;                      /* 5 % depuis la droite */
+  bottom: 5vh;                     /* 5 % depuis le bas */
+  background: rgba(255, 240, 255, 0.85);   /* ton pastel semi-opaque */
+  backdrop-filter: blur(8px);      /* même flou que pour custom */
+  border-radius: 12px;             /* arrondis généreux */
+  box-shadow: 0 8px 24px rgba(180, 120, 255, 0.3);  /* ombre colorée */
+  overflow-y: auto;                /* scroll si besoin */
+  padding: 20px;                   
+  font-family: 'Caveat', cursive;  /* même typo que custom */
+  color: #4c004c;                  /* même palette violette */
+  text-align: center;
+  z-index: 1000;                   /* au-dessus du menu */
+  flex-direction: column;          
+  gap: 16px;
+}
+
+/* En-tête identique à h3 de custom */
+#optionsHeader {
+  width: 64px;
+  margin: 0 auto;
+}
+
+/* Image de commandes plus grande */
+#commandsContainer {
+  background: rgba(255, 255, 255, 0.6);
+  padding: 12px;
+  border-radius: 10px;
+}
+#commandsImage {
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Label & checkbox */
+#cheatLabel {
+  font-size: 1.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+#cheatCheckbox {
+  width: 24px;
+  height: 24px;
+}
+
+/* Bouton Fermer stylé comme dans customize */
+#closeOptionsBtn {
+  margin-top: auto;               /* pousse en bas du panneau */
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff9de2, #fad0c4);
+  border: none;
+  border-radius: 8px;
+  color: #4c004c;
+  font-size: 1.1em;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(180, 120, 255, 0.3);
+  transition: transform .2s, box-shadow .2s;
+}
+#closeOptionsBtn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 16px rgba(180, 120, 255, 0.6);
+}
+#closeOptionsBtn:active {
+  transform: translateY(1px) scale(0.98);
+}
+#commandsImage {
+  width: 72vw;    /* 60 % de la largeur de la fenêtre */
+  height: auto;   /* pour garder les proportions */
+}
+#optionBtn {
+  width: 140px;          /* moitié de la taille du Play par exemple */
+}
+#previewBox {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;            /* caché par défaut */
+  z-index: 1100;            /* au-dessus de la plupart des éléments */
+  pointer-events: none;     /* pour ne pas capturer la souris */
+}
+
+#previewBox img {
+  max-width: 1000px;         /* ou la taille désirée */
+  max-height: 1000px;
+  border: 3px solid #4c004c;
+  border-radius: 8px;
+  background: white;        /* fond blanc pour bien détacher l’aperçu */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+
+
+/* Keyframes pour l’effet “pulse” */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.1); }
+}
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -424,14 +737,18 @@
   <body>
     <canvas id="renderCanvas"></canvas>
     <div id="menu">
-      <img id="playButton" src="images/play.png" alt="Play DreamLand">
-    </div>
+  <img id="playButton" src="images/play.png" alt="Play DreamLand">
+  <div id="menuActions">
+    <img id="customizeBtn" src="images/custom.png" alt="Customize DreamLand">
+    <img id="optionBtn"   src="images/option.png" alt="Options DreamLand">
+  </div>
+</div>
     <div id="introInterface">
       <div class="card">
 
-        <h2>Welcome to Carotales ! ✨</h2>
+        <h2>Welcome to Carrotales ! ✨</h2>
         <p>
-          You play as an adventurous rabbit 🐰<br>
+          You play as an adventurous rabbit, your dream is to bite into the Sacred Carrot !<br>
           Pick up carrots, avoid enemies,<br>
           Fish, dice and unlock powers! <br>
           <em>Tip: take advantage of the first level to harvest a max of carrots!</em>
@@ -442,6 +759,10 @@
       </div>
     </div>
 
+    <div id="previewBox">
+    <img id="previewImg" src="" alt="Aperçu accessoire" />
+  </div>
+
     <div id="loseMenu">
       <h1>You Lose !</h1>
       <button id="retryButton">Retry</button>
@@ -451,15 +772,18 @@
       <div class="shop-left"></div>
     
       <div class="shop-right">
+        <div id="shopEurosDisplay" style="width:100%; text-align:right; margin-bottom:20px; font-size:1.2rem; color:#fff;">
+  Carrots : <span id="shopEurosAmount">0</span>
+</div>
         <div class="item" id="item-buyRange">
           <img src="images/buyRange.png" alt="Buy Range">
           <div class="tooltip">Add 0.2 pick up range.</div>
-          <button id="buyRange">Buy Range (10 carottes)</button>
+          <button id="buyRange">Buy Range (10 carrots)</button>
         </div>
         <div class="item" id="item-buyFreeze">
           <div class="tooltip">Freeze all the enemies for 5 seconds. Cooldown : 60s. Key : a </div>
           <img src="images/gel.png" alt="Gel Ennemis">
-          <button id="buyFreeze">Gel ennemis (25 carottes)</button>
+          <button id="buyFreeze">Freeze all enemies (carrots)</button>
         </div>
         <div class="item" id="item-buySpeed">
           <img src="images/speed.png" alt="Speed Boost">
@@ -469,7 +793,7 @@
         <div class="item" id="item-buyDonate">
           <img src="images/buyDonate.png" alt="Donner">
           <div class="tooltip">You see a tip jar on the stand. Maybe the owner will give you a smile ! </div>
-          <button id="buyDonate">Donner 10 carottes</button>
+          <button id="buyDonate">Tip 10 carrots</button>
         </div>
         <div class="item" id="item-buyCarrotLover">
           <img src="images/buyCarrotLover.png" alt="Carrot Lover">
@@ -479,7 +803,7 @@
         <div class="item" id="item-buyInsurance">
           <img src="images/buyInsurance.png" alt="Assurance‑vie">
           <div class="tooltip">You respawn instantly after dying in the void for 1 time during a level.</div>
-          <button id="buyInsurance">Assurance‑vie (20 carottes)</button>
+          <button id="buyInsurance">Life Insurance (20 carrots)</button>
         </div>
         <div class="item" id="item-niveauSuivant">
           <img src="images/niveauSuivant.png" alt="Niveau Suivant">
@@ -512,6 +836,88 @@
        z-index: 100;font-family: 'MyGameFont', sans-serif;font-size:30px;
      ">
   E : interact
+</div>
+
+  <div id="customizePanel"  >
+    <h3>Personnalisation</h3>
+
+    <!-- Catégorie Tête -->
+    <fieldset>
+      <legend>Tête</legend>
+      <label><input type="radio" name="Tete" value="none" checked> <span>Aucun</span><img src="images/Aucun.png" alt="Aucun"></label><br>
+      <label><input type="radio" name="Tete" value="Couronne"> <span>Couronne</span><img src="images/Couronne.png" alt="Couronne"></label><br>
+      <label><input type="radio" name="Tete" value="Anneau"> <span>Anneau</span><img src="images/Anneau.png" alt="Anneau"></label><br>
+      <label><input type="radio" name="Tete" value="Perruque"> <span>Perruque</span><img src="images/Perruque.png" alt="Perruque"></label><br>
+    </fieldset>
+
+    <!-- Catégorie Visage -->
+    <fieldset>
+      <legend>Visage</legend>
+      <label><input type="radio" name="Visage" value="none" checked> <span>Aucun</span><img src="images/Aucun.png" alt="Aucun"></label><br>
+      <label><input type="radio" name="Visage" value="Nez"> <span>Nez</span><img src="images/Nez.png" alt="Nez"></label><br>
+    </fieldset>
+
+    <!-- Catégorie yeux -->
+    <fieldset>
+      <legend>Yeux</legend>
+      <label><input type="radio" name="Yeux" value="none" checked> <span>Aucun</span><img src="images/Aucun.png" alt="Aucun"></label><br>
+      <label><input type="radio" name="Yeux" value="Lunettes"> <span>Lunettes</span><img src="images/Lunettes.png" alt="Lunettes"></label><br>
+      <label><input type="radio" name="Yeux" value="LunCarottes"> <span>Lunettes Carottes</span><img src="images/LunCarottes.png" alt="LunCarottes"></label><br>
+    </fieldset>
+
+    <!-- Catégorie Dos -->
+    <fieldset>
+      <legend>Dos</legend>
+      <label><input type="radio" name="Dos" value="none" checked> <span>Aucun</span><img src="images/Aucun.png" alt="Aucun"></label><br>
+      <label><input type="radio" name="Dos" value="Aile"> <span>Aile</span><img src="images/Aile.png" alt="Aile"></label><br>
+      <label><input type="radio" name="Dos" value="SacCarotte"> <span>Sac Carotte</span><img src="images/SacCarotte.png" alt="SacCarotte"></label><br>
+    </fieldset>
+
+    <!-- Catégorie Pieds -->
+    <fieldset>
+      <legend>Pieds</legend>
+      <label><input type="radio" name="Pieds" value="none" checked> <span>Aucun</span><img src="images/Aucun.png" alt="Aucun"></label><br>
+      <label><input type="radio" name="Pieds" value="Chaussure"> <span>Chaussure</span><img src="images/Chaussure.png" alt="Chaussure"></label><br>
+    </fieldset>
+
+    <fieldset>
+      <legend>Oreilles</legend>
+      <label><input type="radio" name="Oreilles" value="none" checked> <span>Aucun</span><img src="images/Aucun.png" alt="Aucun"></label><br>
+      <label><input type="radio" name="Oreilles" value="guirCar"> <span>Guirlandes Carottes</span><img src="images/guirCar.png" alt="guirCar"></label><br>
+      <label><input type="radio" name="Oreilles" value="guirNoel"> <span>Guirlandes Noël</span><img src="images/guirNoel.png" alt="guirNoel"></label><br>
+      <label><input type="radio" name="Oreilles" value="bouclesOreilles"> <span>Boucles d'Oreilles</span><img src="images/bouclesOreilles.png" alt="bouclesOreilles"></label><br>
+    </fieldset>
+
+
+
+
+    <!-- Boutons Fermer et Appliquer -->
+    <div style="margin-top:15px;">
+      <button id="closeCustomizeBtn"
+              style="margin-right:10px; padding:8px 16px;">Close</button>
+      <button id="applyCustomizeBtn"
+              style="padding:8px 16px; background:#2196f3; color:#fff; border:none;">Apply changes</button>
+    </div>
+  </div>
+
+
+  <!-- Options Panel -->
+<div id="optionsPanel">
+  <!-- En-tête : ton icône option.png -->
+
+  <!-- Image explicative des commandes -->
+  <div id="commandsContainer">
+    <img src="images/commands.png" alt="Commandes DreamLand" id="commandsImage">
+  </div>
+
+  <!-- Cheat Mode checkbox -->
+  <label id="cheatLabel">
+    <input type="checkbox" id="cheatCheckbox">
+    Cheat Mode (fly)
+  </label>
+
+  <!-- Bouton fermer -->
+  <button id="closeOptionsBtn">Close</button>
 </div>
 
 <div id="eurosDisplay"
@@ -639,8 +1045,8 @@
      background:rgba(0,0,0,0.8); color:white; padding:20px;
      border-radius:8px; max-width:300px; text-align:center; z-index:200;">
   <div id="dialogueText"></div>
-  <button id="nextDialogBtn" style="margin-top:10px;font-family: 'MyGameFont', sans-serif;font-size:30px;">Suivant</button>
-  <button id="acceptQuestBtn" style="margin-top:10px; display:none;font-family: 'MyGameFont', sans-serif;font-size:30px;">Accepter la quête</button>
+  <button id="nextDialogBtn" style="margin-top:10px;font-family: 'MyGameFont', sans-serif;font-size:30px;">Next</button>
+  <button id="acceptQuestBtn" style="margin-top:10px; display:none;font-family: 'MyGameFont', sans-serif;font-size:30px;">Accept quest</button>
 </div>
 
 <!-- Livre de quêtes (touche P) -->
@@ -649,7 +1055,7 @@
             width:300px; height:400px; overflow-y:auto;
             background:rgba(255,255,255,0.9); color:black;
             padding:15px; border-radius:8px; z-index:200;font-family: 'MyGameFont', sans-serif;font-size:30px;">
-  <h3>Quêtes en cours</h3>
+  <h3>Quests in progress</h3>
   <ul id="questList" style="list-style:none; padding:0;"></ul>
 </div>
 
