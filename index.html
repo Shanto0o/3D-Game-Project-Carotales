@@ -714,6 +714,123 @@
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
+#miniGameInterface {
+  display: none;
+  position: fixed;
+  top: 10vh;
+  left: 5vw;
+  right: 5vw;
+  bottom: 10vh;
+  background: rgba(255, 240, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(180, 120, 255, 0.3);
+  z-index: 300;
+  padding: 20px;
+  font-family: 'Caveat', cursive;
+  color: #4c004c;
+
+  /* NE PAS INCLURE display:flex ici ! */
+  /* display: flex;
+     flex-direction: column;
+     gap: 20px;
+     align-items: stretch; */
+  overflow: hidden;
+}
+
+#miniGameInterface .mini-left {
+  /* on laisse flex:1 ou rien ici, selon si vous voulez qu’il prenne tout l’espace restant */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+/* Partie image, en dessous */
+#miniGameInterface .mini-right {
+  /* on indiquera la largeur ici, mais sans display:flex, car la flexbox sera définie en JS */
+  width: 100%;
+  overflow: hidden;
+  display: flex;           /* Si vous voulez centrer l’image, on peut laisser le flex sur ce niveau */
+  align-items: center;
+  justify-content: center;
+}
+
+/* Contraintes pour l’image afin qu’elle ne dépasse jamais */
+#miniGameInterface .mini-right img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+}
+
+/* Titre h3 ajusté */
+#miniGameInterface h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.8em;
+  color: #9b59b6;
+  text-shadow: 0 0 4px rgba(255,255,255,0.7);
+}
+
+/* Paragraphe explicatif */
+#miniGameInterface p {
+  margin: 0 0 15px 0;
+  font-size: 1.1em;
+}
+
+/* Boutons Roll / Leave */
+#miniGameInterface button {
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff9de2, #fad0c4);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1em;
+  color: #4c004c;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#miniGameInterface button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 16px rgba(180, 120, 255, 0.6);
+}
+#miniGameInterface button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Résultat des dés */
+#miniGameInterface #diceResult {
+  margin-top: 15px;
+  font-size: 1.2em;
+  color: #333;
+}
+
+/* Vous pouvez affiner ces styles dans votre <style> existant */
+#volumeInterface {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+}
+#musicVolumeSlider {
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #555;
+  outline: none;
+}
+#musicVolumeSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #ff8c00;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+
+
 
 
 /* Keyframes pour l’effet “pulse” */
@@ -925,14 +1042,20 @@
             background:rgba(0,0,0,0.5); padding:5px 10px; border-radius:5px; color:white;font-family: 'MyGameFont', sans-serif;font-size:30px;">
   Carrots : <span id="eurosAmount">0</span>
 </div>
-<div id="miniGameInterface" style="display:none;
-    position:absolute; top:40%; left:50%; transform:translate(-50%,-50%);
-    background:rgba(0,0,0,0.8); padding:20px; border-radius:8px; color:white; z-index:300;font-family: 'MyGameFont', sans-serif;font-size:30px;">
+<div id="miniGameInterface">
+  <div class="mini-left">
   <h3>Dice game ! ( 10 carrots per attempt)</h3>
   <p>Pay 10 carrots to roll 2 dice :</p>
+  <div>
   <button id="playDiceBtn">Roll the dice</button>
   <button id="closeMiniGameBtn" style="margin-left:10px;">Leave</button>
+  </div>
   <div id="diceResult" style="margin-top:15px;"></div>
+  </div>
+
+  <div class="mini-right">
+    <img src="images/gain.png" alt="Tableau des gains">
+  </div>
 </div>
 <div id="deathScreen"
      style="display:none; position:absolute; top:50%; left:50%;
@@ -1069,9 +1192,138 @@
        alt="Quest Book"
        style="width:96px; height:96px;" />
 </div>
+
+<!-- Interface Volume (HTML complet avec deux sliders) -->
+<div id="volumeInterface" style="
+     display: none;
+     position: absolute;
+     top: 50%;
+     left: 50%;
+     transform: translate(-50%, -50%);
+     background: rgba(0, 0, 0, 0.8);
+     padding: 20px 30px;
+     border-radius: 8px;
+     color: white;
+     text-align: center;
+     z-index: 1000;
+     font-family: 'MyGameFont', sans-serif;
+     font-size: 24px;
+">
+  <!-- Slider Musique -->
+  <label for="musicVolumeSlider" style="display: block; margin-bottom: 20px;">
+    Volume Musique :
+    <input type="range"
+       id="musicVolumeSlider"
+       min="0"
+       max="0.5"
+       step="0.01"
+       value="0.25"
+       style="width: 250px; margin-left: 10px;" />
+  </label>
+
+  <!-- Slider Effets -->
+  <label for="effectVolumeSlider" style="display: block; margin-bottom: 20px;">
+    Volume Effets :
+    <input type="range"
+       id="effectVolumeSlider"
+       min="0"
+       max="2"
+       step="0.01"
+       style="width: 250px; margin-left: 10px;" />
+  </label>
+
+  <!-- Bouton Fermer -->
+  <button id="closeVolumeBtn" style="
+    margin-top: 10px;
+    padding: 8px 16px;
+    font-size: 18px;
+    background: #ff8c00;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  ">
+    Fermer
+  </button>
+</div>
 <div id="promptDiv" style="position:absolute; top:10px; left:50%; transform:translateX(-50%); color:white; font-family:sans-serif;"></div>
 
 
+
+<!-- 1) On crée un objet Audio pour le son de menu -->
+<script>
+  const menuClickAudio = new Audio("images/menuclick.wav");
+  menuClickAudio.volume = 0.5;
+  menuClickAudio.preload = "auto";
+
+  // 2) On crée un objet Audio pour le son de sélection dans le customizePanel
+  const selectAudio = new Audio("images/menuclick.mp3");
+  selectAudio.volume = 0.5;
+  selectAudio.preload = "auto";
+</script>
+
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    // ─────────── Sons de Menu ───────────
+    const menuButtons = [
+      "playButton",
+      "optionBtn",
+      "customizeBtn",
+      "closeCustomizeBtn",
+      "applyCustomizeBtn",
+      "closeOptionsBtn"
+    ];
+
+    menuButtons.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.addEventListener("click", () => {
+          menuClickAudio.currentTime = 0;
+          menuClickAudio.play().catch(err => {
+            console.warn("Impossible de jouer menuclick.mp3 : ", err);
+          });
+
+          if (id === "playButton") {
+            console.log("Bouton Jouer cliqué — affichage de l'intro");
+            document.getElementById("menu").style.display = "none";
+            document.getElementById("introInterface").style.display = "flex";
+          }
+          // Les autres boutons conservent leur logique existante…
+        });
+      }
+    });
+
+    // ─────────── Son de Sélection (customizePanel) ───────────
+    // On cible tous les <input type="radio"> à l’intérieur de #customizePanel
+    const radios = document.querySelectorAll("#customizePanel input[type='radio']");
+    radios.forEach(radio => {
+      radio.addEventListener("change", () => {
+        // Dès qu’un radio change (clic sur une option), on joue selectAudio
+        selectAudio.currentTime = 0;
+        selectAudio.play().catch(err => {
+          console.warn("Impossible de jouer select.mp3 : ", err);
+        });
+      });
+    });
+
+    // Optionnel : si vous voulez aussi jouer le son au clic sur le <label> lui-même
+    // (au cas où vous cliquez sur l’image ou le texte, pas directement sur l’input),
+    // on peut binder sur tous les <label> de #customizePanel :
+    const labels = document.querySelectorAll("#customizePanel label");
+    labels.forEach(lbl => {
+      lbl.addEventListener("click", () => {
+        // On donne un petit délai pour laisser le change sur le radio se déclencher en premier,
+        // mais si le change n'a pas encore eu lieu, on joue de toute façon.
+        setTimeout(() => {
+          selectAudio.currentTime = 0;
+          selectAudio.play().catch(err => {
+            console.warn("Impossible de jouer select.mp3 : ", err);
+          });
+        }, 10);
+      });
+    });
+  });
+</script>
 
     <script type="module" src="js/main.js"></script>
     <script src="js/NPC.js"></script>
