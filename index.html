@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <title>Carotales</title>
     <link rel="icon" type="image/png" href="images/fav.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
     <style>
 
@@ -239,6 +240,19 @@
   border: 1px solid #ff8c00;       /* contour orange pour la cohérence */
   box-shadow: 0 0 5px rgba(255, 165, 0, 0.6);
 }
+
+    #introInterface {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 10, 30, 0.8);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    }
 
     #introInterface .card {
   width: 90%;            /* occuper 90 % de la largeur disponible */
@@ -685,7 +699,6 @@
   margin: 0 auto;    /* centre l’image dans son conteneur */
 }
 
-
 /* Label & checkbox */
 #cheatLabel {
   font-size: 1.4em;
@@ -1052,6 +1065,7 @@
     <fieldset>
       <legend>Dos</legend>
       <label><input type="radio" name="Dos" value="none" checked> <span>Aucun</span><img src="images/Aucun.png" alt="Aucun"></label><br>
+      <label><input type="radio" name="Dos" value="Aile"> <span>Aile</span><img src="images/Aile.png" alt="Aile"></label><br>
       <label><input type="radio" name="Dos" value="SacCarotte"> <span>Sac Carotte</span><img src="images/SacCarotte.png" alt="SacCarotte"></label><br>
     </fieldset>
 
