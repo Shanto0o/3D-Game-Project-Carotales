@@ -6,8 +6,9 @@ export default class FishingManager {
    * @param {function} setEuros   Fonction pour mettre à jour le solde (en carottes)
    * @param {function} toastFn    Fonction d’affichage de toast
    */
-  constructor(getEuros, setEuros, toastFn) {
+  constructor(getEuros, setEuros, toastFn, scene) {
     this.getEuros    = getEuros;
+    this.scene =scene;
     this.setEuros    = setEuros;
     this.toastFn     = toastFn;
 
@@ -117,14 +118,14 @@ export default class FishingManager {
             this.setEuros(this.getEuros() + gain);
             this.hide();
             return;
-          } else if (rnd < 0.8) {
+          } else if (rnd < 0.8 && rnd >= 0.4) {
             // Quest item
             this.am.play("fish");
             this.toastFn(
               `You fished : ${this.questDrop.itemName} !`,
               5000
             );
-            this.questDrop.title = "Bring the item back to the officer";
+            this.scene.pecheFini = true;
             window.dispatchEvent(new CustomEvent("questItemFished", {
               detail: { questId: this.questDrop.questId }
             }));

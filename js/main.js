@@ -55,7 +55,7 @@ let CAM_MAX_ZOOMED;
 let camIsZoomed;
 let camTargetRadius;
 
-let currentLevel = 1; // niveau actuel du joueur
+let currentLevel = 3; // niveau actuel du joueur
 const maxLevel = 3;
 let orbsTarget = currentLevel * 5;
 let collectedOrbs = 0;
@@ -1337,7 +1337,8 @@ function createScene() {
             euros = v;
             updateEurosUI();
         },
-        (msg, duration) => showToast(msg, duration)
+        (msg, duration) => showToast(msg, duration),
+        scene
     );
     scene.fishingManager = fishingManager;
 
@@ -1594,37 +1595,11 @@ function createFinalPoint(x, y, z) {
   const promptDiv = document.getElementById("promptDiv");
   finalMesh.actionManager = new BABYLON.ActionManager(scene);
 
-  finalMesh.actionManager.registerAction(
-    new BABYLON.ExecuteCodeAction(
-      { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: { mesh: player.mesh } },
-      () => {
-        isNear = true;
-        promptDiv.textContent = "Press E to.. BITE THE SACRED CARROT !";
-      }
-    )
-  );
-
-  finalMesh.actionManager.registerAction(
-    new BABYLON.ExecuteCodeAction(
-      { trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: { mesh: player.mesh } },
-      () => {
-        isNear = false;
-        promptDiv.textContent = "";
-      }
-    )
-  );
-
-  const keyboardObs = scene.onKeyboardObservable.add((kbInfo) => {
-    if (
-      isNear &&
-      kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN &&
-      (kbInfo.event.key === "e" || kbInfo.event.key === "E")
-    ) {
-      scene.onKeyboardObservable.remove(keyboardObs);
-      finalMesh.dispose();
-      promptDiv.textContent = "";
-
-      // Ajout ici : jouer l'animation manger avant de continuer
+  const onEinteract = (e) => {
+   // Ignore si ce n’est pas E ou si c’est un repeat (touche maintenue)
+   if (e.key.toLowerCase() !== "e" || e.repeat) return;
+   window.removeEventListener("keydown", onEinteract);
+   // Ajout ici : jouer l'animation manger avant de continuer
       player.currentAnim?.stop();
       if (player.animationGroups.mange) {
         player.animationGroups.mange.play(false);
@@ -1638,8 +1613,30 @@ function createFinalPoint(x, y, z) {
         console.error("Animation 'manger' introuvable !");
         nextLevel();  // fallback direct si animation absente
       }
-    }
-  });
+ };
+
+  finalMesh.actionManager.registerAction(
+    new BABYLON.ExecuteCodeAction(
+      { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: { mesh: player.mesh } },
+      () => {
+        
+        promptDiv.textContent = "Press E to.. BITE THE SACRED CARROT !";
+        window.addEventListener("keydown", onEinteract);
+      }
+    )
+  );
+
+  finalMesh.actionManager.registerAction(
+    new BABYLON.ExecuteCodeAction(
+      { trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: { mesh: player.mesh } },
+      () => {
+        promptDiv.textContent = "";
+        window.removeEventListener("keydown", onEinteract);
+      }
+    )
+  );
+
+
 }
 
 
@@ -2248,7 +2245,7 @@ function createGround(scene, level) {
 
 
 
-
+            scene.pecheFini = false;
             const path = [
                 new BABYLON.Vector3(5, 9.2, 140.4),
                 new BABYLON.Vector3(-26.6, 9.2, 136.2),

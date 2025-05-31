@@ -189,7 +189,7 @@ this.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
       // Cas spécial pour la quête 0 (pêche)
       if (this.id === "quest0") {
         // Avant pêche (titre inchangé) → invite à pêcher
-        if (fishingManager.questDrop.title === this.initialTitle) {
+        if (!this.scene.pecheFini) {
           document.getElementById("dialogueText").textContent =
             "you have to fish out Mr. X's wallet";
           const dlg = document.getElementById("dialogueBox");
