@@ -550,7 +550,9 @@ async function startGame() {
             volume: 0.2
         }),
         audioManager.load("chest", "images/chest.mp3"),
-        audioManager.load("horn", "images/horn.wav"),
+        audioManager.load("horn", "images/horn.wav", {
+            volume: 0.2
+        }),
         audioManager.load("lock", "images/lock.wav", {
             volume: 0.2
         }),
