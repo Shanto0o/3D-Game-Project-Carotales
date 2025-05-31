@@ -1599,6 +1599,7 @@ function createFinalPoint(x, y, z) {
    // Ignore si ce n’est pas E ou si c’est un repeat (touche maintenue)
    if (e.key.toLowerCase() !== "e" || e.repeat) return;
    window.removeEventListener("keydown", onEinteract);
+      promptDiv.style.display = "none";
    // Ajout ici : jouer l'animation manger avant de continuer
       player.currentAnim?.stop();
       if (player.animationGroups.mange) {
