@@ -2130,7 +2130,7 @@ function createGround(scene, level) {
                 {
                     position: new BABYLON.Vector3(33.6, 2, -75.6),
                     questId: "quest3",
-                    dialogue: ["Hey !", "Are you trying to open this lock? I think I can help you. See the big piñata behind me?", "If you break it fast enough, no one will notice you and you can bring me back my 3 favorite candies.","Be careful, the piñata don't like to be touched", "In exchange, I'll open one of the locks for you. You'll drop them in the candy bucket right here.", " Win-win ! "],
+                    dialogue: ["Hey !", "Are you trying to open this lock? I think I can help you. See the big piñata behind me?", "If you break it fast enough, no one will notice you and you can bring me back my 3 favorite candies.","Be careful, the piñata don't like to be touched..", "In exchange, I'll open one of the locks for you. You'll drop them in the candy bucket right here.", " Win-win ! "],
                     title: "Break the piñata and collect the candies"
                 },
             ];
