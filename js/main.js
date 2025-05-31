@@ -276,6 +276,8 @@ if (!promptDiv) {
 function updateEurosUI() {
     const span = document.getElementById("eurosAmount");
     if (span) span.textContent = euros;
+    const spanshop =  document.getElementById("shopEurosAmount");
+    if (spanshop) spanshop.textContent = euros;
 }
 
 
