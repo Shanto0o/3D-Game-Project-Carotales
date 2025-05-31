@@ -55,7 +55,7 @@ let CAM_MAX_ZOOMED;
 let camIsZoomed;
 let camTargetRadius;
 
-let currentLevel = 1; // niveau actuel du joueur
+let currentLevel = 2; // niveau actuel du joueur
 const maxLevel = 3;
 let orbsTarget = currentLevel * 5;
 let collectedOrbs = 0;
@@ -1524,6 +1524,7 @@ function createFinishPoint(x, y, z) {
             // On attache le modèle
             finishModel.parent = finishMesh;
             finishModel.receiveShadows = true;
+            
 
             // 1) On scale le nœud qui va porter la hit-box
             finishMesh.scaling = new BABYLON.Vector3(4, 4, -4);
@@ -1555,6 +1556,13 @@ function createFinishPoint(x, y, z) {
             finishModel.receiveShadows = true;
             finishModel.rotation.y = Math.PI / 2;
             finishModel.scaling = new BABYLON.Vector3(1, 1, -1);
+
+            meshes.forEach(m => {
+            if (!(m.name == "__root__")) {
+                const boxAgg = new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
+                allAggregates.push(boxAgg);
+            }
+        }); 
 
             if (currentLevel === 2) {
                 finishModel.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
