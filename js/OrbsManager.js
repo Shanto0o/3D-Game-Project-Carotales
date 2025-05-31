@@ -2,15 +2,21 @@ export default class OrbsManager {
     constructor(scene) {
         this.scene = scene;
         this.orbs = [];
+
+
     }
 
     createOrbsAtPositions(positions) {
+        const shadowGen = this.scene._shadowGenerator;
         positions.forEach(pos => {
             BABYLON.SceneLoader.ImportMesh("", "./images/", "carotte.glb", this.scene, (meshes) => {
                 let orb = meshes[0];
+                shadowGen.addShadowCaster(orb);
                 orb.position.set(pos.x, pos.y !== undefined ? pos.y : 1, pos.z);
                 orb.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
-                orb.receiveShadows = true;
+                meshes.forEach(m => {
+                    shadowGen.addShadowCaster(m);
+                });
 
 
                 this.orbs.push(orb);

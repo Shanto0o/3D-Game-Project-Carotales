@@ -106,7 +106,7 @@ export default class FishingManager {
         // ——— Si on est en mode quête, on distribue selon : 10% rare loot, 10% quest item, 80% normal ———
         if (this.questDrop) {
           const rnd = Math.random();
-          if (rnd < 0.10) {
+          if (rnd < 0.4) {
             // Rare loot
             this.am.play("fish");
             gain = 25;
@@ -114,14 +114,14 @@ export default class FishingManager {
             this.setEuros(this.getEuros() + gain);
             this.hide();
             return;
-          } else if (rnd < 0.95) {
+          } else if (rnd < 0.8) {
             // Quest item
             this.am.play("fish");
             this.toastFn(
-              `Vous avez pêché ${this.questDrop.itemName} !`,
+              `You fished : ${this.questDrop.itemName} !`,
               5000
             );
-            this.questDrop.title = "Ramenez l'objet à l'officier";
+            this.questDrop.title = "Bring the item back to the officer";
             window.dispatchEvent(new CustomEvent("questItemFished", {
               detail: { questId: this.questDrop.questId }
             }));
@@ -136,7 +136,7 @@ export default class FishingManager {
         }
 
         // ——— Loot classique en carottes ———
-        if (Math.random() < 0.4) {
+        if (Math.random() < 0.25) {
           this.am.play("fish");
           gain = 25;
           this.toastFn(`RARE LOOT (10%) : +${gain} carrots !`, 2000);

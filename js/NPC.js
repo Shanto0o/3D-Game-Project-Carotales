@@ -35,21 +35,136 @@ export default class NPC {
     this.initialTitle = questTitle;        // pour comparer avant/après pêche
     this.questTitle  = questTitle;
     this.onComplete  = onComplete;
+    this.questManager = scene.questManager;
+    this.fishingManager = scene.fishingManager; // fourni pour quest0
     this._dlgIndex   = 0;
+    this.animationGroups = {};
+    this.zone;
 
-    // Crée un simple cube pour le PNJ
-    this.mesh = BABYLON.MeshBuilder.CreateBox(
-      "npc_" + id,
-      { size: 3 },
-      scene
+    const idx      = id.replace("quest", "");         // ex. "quest2" → "2"
+const fileName = `pnj${idx}.glb`;                 // pnj2.glb
+
+// Charge d'abord le .glb
+console.log("Importing NPC mesh:", fileName);
+BABYLON.SceneLoader.ImportMesh(
+  /* meshNames */ "",
+  /* rootUrl   */ "images/",
+  /* sceneFile */ fileName,
+  /* scene     */ scene,
+  (meshes, particleSystems, skeletons, animationGroups) => {
+    // 1) Crée un parent *à l’origine* (0,0,0)
+    this.mesh = meshes[0]; // On garde le premier mesh comme référence
+
+    // 3) Positionne & scale ton parent **après** le rattachement
+    this.mesh.position.copyFrom(position);
+    this.mesh.position.y -= 1;
+    this.mesh.scaling = new BABYLON.Vector3(2.5,2.5,2.5); // Ajuste si besoin
+
+
+    if (this.id === "quest3") {
+      
+      this.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+    BABYLON.Axis.Y,
+    -7 * Math.PI / 8
+    
+  );
+    } ;
+    if (this.id === "quest1") {
+      this.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+    BABYLON.Axis.Y,
+    3 * Math.PI / 2
+    
+  );
+
+    };
+
+    
+    if (this.id === "quest2") {
+this.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
+    BABYLON.Axis.Y,
+    -Math.PI / 4
+  );
+    }
+
+    meshes.forEach(m => {
+      if (!(m.name == "__root__")) {
+        const boxAgg = new BABYLON.PhysicsAggregate(m, BABYLON.PhysicsShapeType.MESH);
+      }
+    });
+
+
+
+    animationGroups.forEach((ag) => {
+          console.log("Animation group:", ag.name);
+          if (ag.name === "Idle") {
+            console.log("Found idle animation group : ", ag.name);
+            this.animationGroups.idle = ag;
+          }
+          });
+        if (this.animationGroups.idle) {
+          this.animationGroups.idle.play(true);
+          this.currentAnim = this.animationGroups.idle;
+        } 
+
+
+
+// 2) On crée une zone invisible plus large autour du PNJ
+        const zoneDiameter = 10; // largeur de la zone, ajuster selon besoin
+        const zoneName = `zone_${this.id}`;
+        const zone = BABYLON.MeshBuilder.CreateSphere(
+          zoneName,
+          { diameter: zoneDiameter },
+          scene
+        );
+        zone.position.copyFrom(position);
+        zone.isVisible  = false;
+        zone.isPickable = false;
+        this.interactZone = zone;
+
+        const onDInteract = (e) => {
+   // Ignore si ce n’est pas G ou si c’est un repeat (touche maintenue)
+   if (e.key.toLowerCase() !== "g" || e.repeat) return;
+   window.removeEventListener("keydown", onDInteract);
+   this.interact(this.questManager, this.fishingManager);
+   const exclamNum =  `exclam${idx}`;
+   console.log("Exclam number LAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA :", exclamNum, " ET la scène.exclam  :", scene[exclamNum]);
+   scene[exclamNum].dispose();
+ };
+
+        // 3) On installe l'ActionManager sur la zone
+        zone.actionManager = new BABYLON.ActionManager(scene);
+
+        // Affiche "Press G to talk" à l'entrée
+        zone.actionManager.registerAction(
+          new BABYLON.ExecuteCodeAction(
+            {
+              trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger,
+              parameter: { mesh: scene.player.mesh }
+            },
+            () => {
+              showToast("Press G to talk", 2000);
+              window.addEventListener("keydown", onDInteract);
+            }
+          )
+        );
+        // Nettoie à la sortie
+        zone.actionManager.registerAction(
+          new BABYLON.ExecuteCodeAction(
+            {
+              trigger: BABYLON.ActionManager.OnIntersectionExitTrigger,
+              parameter: { mesh: scene.player.mesh }
+            },
+            () => {
+              window.removeEventListener("keydown", onDInteract);
+            }
+          )
+        );
+      },
+      null,
+      (sceneRef, message, exception) => {
+        console.error(`⚠️ Impossible de charger ${fileName} :`, message, exception);
+      }
     );
-    this.mesh.position = position;
-    this.mesh.isPickable = false; // on gère l’interaction via ActionManager
-
-    // Matériau orange
-    const mat = new BABYLON.StandardMaterial("npcMat_" + id, scene);
-    mat.diffuseColor = new BABYLON.Color3(1, 0.5, 0);
-    this.mesh.material = mat;
   }
   
 
@@ -75,33 +190,34 @@ export default class NPC {
         // Avant pêche (titre inchangé) → invite à pêcher
         if (fishingManager.questDrop.title === this.initialTitle) {
           document.getElementById("dialogueText").textContent =
-            "Il faut d'abord pêcher l'objet perdu pour l'officier.";
+            "you have to fish out Mr. X's wallet";
           const dlg = document.getElementById("dialogueBox");
           dlg.style.display = "block";
           setTimeout(() => dlg.style.display = "none", 2000);
           return;
         }
         // Après pêche (titre changé) → complète la quête^
-        showToast("Merci beaucoup ! Voici de quoi avancer vers votre reve", 6000);
+        showToast("Thank you very much! This should help you in your quest.", 8000);
         questManager.completeQuest(this.id);
         canvas.requestPointerLock();
 
-        if (this.mesh.actionManager) {
-          this.mesh.actionManager.dispose();
+        if (this.interactZone.actionManager) {
+          this.interactZone.actionManager.dispose();
         }
         document.getElementById("interactPrompt").style.display = "none";
         return;
       }
       if (this.id === "quest2") {
        if (!this.scene.keyPicked) {
-         showToast("Vous devez d'abord trouver la clé cachée au fond de la grotte.", 2000);
+         showToast("You must first find the hidden key at the bottom of the cave.", 3000);
          return;
        } else {
-         showToast("Merci d'avoir rapporté la clé ! Quête terminée.", 3000);
+         showToast("Thank you for bringing back the key! Quest complete.", 3000);
+         canvas.requestPointerLock();
          questManager.completeQuest(this.id);
-         // on désactive l’interaction sur ce PNJ
-         if (this.mesh.actionManager) {
-          this.mesh.actionManager.dispose();
+         // Disable interaction on this NPC
+         if (this.interactZone.actionManager) {
+          this.interactZone.actionManager.dispose();
         }
         document.getElementById("interactPrompt").style.display = "none";
         return;
@@ -110,14 +226,14 @@ export default class NPC {
      }
      if (this.id === "quest3") {
        if (!this.scene.ItemPose) {
-         showToast("Vous devez récupérer les bonbons et les ramener dans le pot.", 2000);
+         showToast("You must retrieve the candies and bring them back to the jar.", 2000);
          return;
        } else {
-         showToast("Merci d'avoir rapporté les bonbons ! J'espere que la carotte sacrée en vaut le cout, tout le monde vous a entendu..", 3000);
+         showToast("Thank you for bringing back the candies! I hope the sacred carrot is worth it, everyone heard you..", 3000);
          questManager.completeQuest(this.id);
-         // on désactive l’interaction sur ce PNJ
-         if (this.mesh.actionManager) {
-          this.mesh.actionManager.dispose();
+         // Disable interaction on this NPC
+         if (this.interactZone.actionManager) {
+          this.interactZone.actionManager.dispose();
         }
         document.getElementById("interactPrompt").style.display = "none";
         return;
@@ -127,13 +243,13 @@ export default class NPC {
 
      if (this.id === "quest1") {
        if (!this.scene.JumpFini) {
-         showToast("Vous devez terminer le parcours", 2000);
+         showToast("You must complete the course", 2000);
          return;
        } else {
          questManager.completeQuest(this.id);
          // on désactive l’interaction sur ce PNJ
-         if (this.mesh.actionManager) {
-          this.mesh.actionManager.dispose();
+         if (this.interactZone.actionManager) {
+          this.interactZone.actionManager.dispose();
         }
         document.getElementById("interactPrompt").style.display = "none";
         return;
@@ -177,7 +293,7 @@ export default class NPC {
 
        // Si c’est la quête 2, on importe la clé dans la scène
    if (this.id === "quest2") {
-     showToast("Une clé a été cachée au fond de la grotte…", 3000);
+     showToast("Find the key in the cave", 3000);
      BABYLON.SceneLoader.ImportMesh(
        "", "images/", "key.glb", this.scene,
        (meshes) => {
@@ -192,47 +308,14 @@ export default class NPC {
    }
 
    if (this.id === "quest3") {
-  showToast("Le grand golem mécanique apparaît ! Préparez-vous au combat.", 8000);
-  BABYLON.SceneLoader.ImportMesh(
-    "", "images/", "boss.glb", this.scene,
-    (meshes) => {
-      // 1) Le nœud racine
-      const root = meshes[0];
-      // On positionne le root
-      root.position.set(86.5, -15, -189.7);
-      root.scaling.copyFromFloats(0.5, 0.5, 0.5);
-      root.checkCollisions = true;
-      root.receiveShadows = true;
+  showToast("You have to destroy the piñata!", 8000);
 
-      // 2) On cherche le mesh enfant pour la physique
-      const geom = meshes.find(m =>
-        m !== root &&
-        m instanceof BABYLON.Mesh &&
-        m.geometry &&
-        m.geometry.getTotalVertices() > 0
-      );
-      if (geom) {
-        const agg = new BABYLON.PhysicsAggregate(
-          geom,                               // on donne ce mesh à Havok
-          BABYLON.PhysicsShapeType.MESH,
-          { mass: 50, friction: 1.0, restitution: 0.1 },
-          this.scene
-        );
-        agg.body.setMotionType(BABYLON.PhysicsMotionType.DYNAMIC);
-      } else {
-        console.warn("boss.glb : pas de geom child trouvé pour la physique");
-      }
-
-      // 3) On stocke le root pour l’attaque et la distance
-      this.scene.bossMesh = root;
-    }
-  );
 }
 
 
 
     if (this.id === "quest0" && fishingManager) {
-      fishingManager.registerQuestDrop("quest0", "Portefeuille abîmé");
+      fishingManager.registerQuestDrop("quest0", "Damaged wallet");
     }
     canvas.requestPointerLock?.();
   };

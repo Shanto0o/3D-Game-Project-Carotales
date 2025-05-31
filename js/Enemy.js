@@ -1,7 +1,7 @@
 
 export default class Enemy {
 
-  constructor(scene, path, speed = 0.05, detectionRange = 10, audioManager) {
+  constructor(scene, path, speed = 0.05, detectionRange = 10, audioManager, ) {
     this.scene = scene;
     this.path = path;
     this.speed = speed;
