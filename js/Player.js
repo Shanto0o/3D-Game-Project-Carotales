@@ -61,6 +61,7 @@ export default class Player {
     this.wantJump = 0;
     this.jumpSpeed = 10.0;
     this.jumpHeight = 7.0;
+    this.hasJumped = false;
     this.gravity = new BABYLON.Vector3(0, -30, 0);
     this.state = "ON_GROUND";
     // after this.state = "ON_GROUND";
@@ -227,7 +228,7 @@ export default class Player {
     }
 
     if (this.state === "IN_AIR") {
-      if (this.debugFly || this._unsuppCount < this._UNSUPP_THRESHOLD * 10) {
+      if (this.debugFly || (!this.hasJumped && this._unsuppCount < this._UNSUPP_THRESHOLD * 10)) {
         if (this.wantJump > 0) {
           this.wantJump--;
           return (this.state = "START_JUMP");
@@ -240,6 +241,7 @@ export default class Player {
     }
 
     if (this.state === "ON_GROUND") {
+      this.hasJumped = false;
       if (this._unsuppCount >= this._UNSUPP_THRESHOLD) {
         return (this.state = "IN_AIR");
       }
@@ -255,6 +257,7 @@ export default class Player {
       this.animationGroups.jump?.play(false);
       this.currentAnim = this.animationGroups.jump;
       this.am.play("jump");
+      this.hasJumped = true;
       return (this.state = "IN_AIR");
     }
   }
