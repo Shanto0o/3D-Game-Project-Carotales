@@ -94,7 +94,7 @@ export default class Player {
     BABYLON.SceneLoader.ImportMesh(
       "",
       "images/",
-      "Accessoire.glb",
+      "bunnyv2.glb",
       scene,
       (meshes, particleSystems, skeletons, animationGroups) => {
         console.log(animationGroups);
@@ -137,6 +137,9 @@ export default class Player {
           else if (ag.name === "boule") {
             console.log("Found boule animation group : ", ag.name);
             this.animationGroups.boule = ag;
+          } else if (ag.name === "VraiFall") {
+            console.log("Found fall animation group : ", ag.name);
+            this.animationGroups.fall = ag;
           }
         });
         if (this.animationGroups.idle) {
@@ -175,6 +178,16 @@ export default class Player {
   setAccessoriesConfig(config) {
     this.accessoriesConfig = config;
     this.updateAccessoriesVisibility();
+  }
+
+  _switchAnimation(newAnimGroup, loop = true) {
+    if (!newAnimGroup) return;
+    if (this.currentAnim === newAnimGroup) return; // déjà en cours
+    // on stoppe l’ancienne
+    this.currentAnim?.stop();
+    // on lance la nouvelle
+    newAnimGroup.play(loop);
+    this.currentAnim = newAnimGroup;
   }
 
   updateAccessoriesVisibility() {

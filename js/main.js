@@ -54,7 +54,7 @@ let CAM_MAX_ZOOMED;
 let camIsZoomed;
 let camTargetRadius;
 
-let currentLevel = 1; // niveau actuel du joueur
+let currentLevel = 3; // niveau actuel du joueur
 const maxLevel = 3;
 let orbsTarget = currentLevel * 5;
 let collectedOrbs = 0;
@@ -633,7 +633,10 @@ async function startGame() {
         }),
         audioManager.load("freeze", "images/freeze.wav", {
             volume: 0.2
-        })
+        }),
+        audioManager.load("speed", "images/speed.mp3", {
+            volume: 0.2
+        }),
     ]);
 
     const effectSlider = document.getElementById("effectVolumeSlider");
@@ -1467,6 +1470,27 @@ function createScene() {
         player.controller.setVelocity(desiredLinearVelocity);
 
         player.controller.integrate(dt, support, player.gravity);
+
+        // ================= NOUVEAU : Gérer l'animation "fall" ================
+  // Récupérer la vélocité actuelle du controller (Vector3)
+  const vel = player.controller.getVelocity();
+  const vy = vel.y; // composante verticale
+
+  if (player.state === "IN_AIR" && player._unsuppCount >= player._UNSUPP_THRESHOLD * 3) {
+    if (vy < 0) {
+      // le joueur descend : jouer "fall"
+      player._switchAnimation(player.animationGroups.fall, true);
+    }
+    // sinon (vy >= 0), on reste en phase ascendante (jump) :  
+    // la phase "jump" a déjà été lancée dans getNextState() / START_JUMP.
+  } else if (player.state === "ON_GROUND") {
+    // quand on touche le sol, on repasse à idle ou walk :
+    if (player.inputDirection.lengthSquared() > 0) {
+      player._switchAnimation(player.animationGroups.walk, true);
+    } else {
+      player._switchAnimation(player.animationGroups.idle, true);
+    }
+  } 
     });
 
 
@@ -1988,9 +2012,9 @@ function createGround(scene, level) {
             challengeTimer.id = "challengeTimer";
             challengeTimer.style = `
   position: absolute;
-  top: 10%;
+  top: 5%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(0.5);
   font-size: 1.2em;
   display: none;
   background: rgba(255, 200, 255, 0.3);
@@ -2014,7 +2038,7 @@ function createGround(scene, level) {
             abortAttemptBtn.textContent = "Abandon the current attempt";
             abortAttemptBtn.style = `
   position: absolute;
-  top: 5%;
+  top: 2%;
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.8em;
@@ -2907,6 +2931,7 @@ function triggerSpeed() {
 
     update_skillicon("iconSpeed", "images/speed_cd.png");
     showToast("Speed boost activated ! 10 s");
+    audioManager.play("speed");
 
     player.speedMult = 1.5;
 
