@@ -1572,78 +1572,62 @@ function createFinishPoint(x, y, z) {
  * - passage au niveau suivant sur E
  */
 function createFinalPoint(x, y, z) {
-    // 1) Création du mesh de collision
-    const finalMesh = BABYLON.MeshBuilder.CreateBox("finalPoint", {
-        size: 15
-    }, scene);
-    finalMesh.position.set(x, y, z);
-    finalMesh.isVisible = false;
-    finalMesh.checkCollisions = true;
+  const finalMesh = BABYLON.MeshBuilder.CreateBox("finalPoint", { size: 15 }, scene);
+  finalMesh.position.set(x, y, z);
+  finalMesh.isVisible = false;
+  finalMesh.checkCollisions = true;
 
+  let isNear = false;
+  const promptDiv = document.getElementById("promptDiv");
+  finalMesh.actionManager = new BABYLON.ActionManager(scene);
 
-    // 3) Prépare le prompt
-    let isNear = false;
-    const {
-        ActionManager,
-        ExecuteCodeAction,
-        KeyboardEventTypes
-    } = BABYLON;
+  finalMesh.actionManager.registerAction(
+    new BABYLON.ExecuteCodeAction(
+      { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: { mesh: player.mesh } },
+      () => {
+        isNear = true;
+        promptDiv.textContent = "Press E to.. BITE THE SACRED CARROT !";
+      }
+    )
+  );
 
-    // Assurez-vous d'avoir une <div id="promptDiv"></div> dans votre HTML
-    const promptDiv = document.getElementById("promptDiv");
+  finalMesh.actionManager.registerAction(
+    new BABYLON.ExecuteCodeAction(
+      { trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: { mesh: player.mesh } },
+      () => {
+        isNear = false;
+        promptDiv.textContent = "";
+      }
+    )
+  );
 
-    // 4) ActionManager pour détecter l'entrée/sortie de collision
-    finalMesh.actionManager = new ActionManager(scene);
+  const keyboardObs = scene.onKeyboardObservable.add((kbInfo) => {
+    if (
+      isNear &&
+      kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN &&
+      (kbInfo.event.key === "e" || kbInfo.event.key === "E")
+    ) {
+      scene.onKeyboardObservable.remove(keyboardObs);
+      finalMesh.dispose();
+      promptDiv.textContent = "";
 
-    // Entrée en collision → on affiche le message
-    finalMesh.actionManager.registerAction(
-        new ExecuteCodeAction({
-                trigger: ActionManager.OnIntersectionEnterTrigger,
-                parameter: {
-                    mesh: player.mesh
-                }
-            },
-            () => {
-                isNear = true;
-                promptDiv.textContent = "Press E to.. BITE THE SACRED CARROT !";
+      // Ajout ici : jouer l'animation manger avant de continuer
+      player.currentAnim?.stop();
+      if (player.animationGroups.mange) {
+        player.animationGroups.mange.play(false);
+        
+        // Attendre la fin de l'animation avant d'appeler nextLevel
 
-            }
-        )
-    );
-
-    // Sortie de collision → on cache le message
-    finalMesh.actionManager.registerAction(
-        new ExecuteCodeAction({
-                trigger: ActionManager.OnIntersectionExitTrigger,
-                parameter: {
-                    mesh: player.mesh
-                }
-            },
-            () => {
-                isNear = false;
-                promptDiv.textContent = "";
-            }
-        )
-    );
-
-    // 5) Observable clavier pour capturer la touche E
-    const keyboardObs = scene.onKeyboardObservable.add((kbInfo) => {
-        if (
-            isNear &&
-            kbInfo.type === KeyboardEventTypes.KEYDOWN &&
-            (kbInfo.event.key === "e" || kbInfo.event.key === "E")
-        ) {
-            // Nettoyage
-
-            scene.onKeyboardObservable.remove(keyboardObs);
-            finalMesh.dispose();
-            promptDiv.textContent = "";
-            // Passage au niveau suivant
-            nextLevel();
-        }
-    });
+        playThreeTimes("miam", "images/miam.wav");
+        
+        setTimeout(nextLevel,3000); // 3 secondes pour l'animation
+      } else {
+        console.error("Animation 'manger' introuvable !");
+        nextLevel();  // fallback direct si animation absente
+      }
+    }
+  });
 }
-
 
 
 function createGamblingTable(x, y, z) {
@@ -3248,9 +3232,10 @@ function nextLevel() {
         console.log("Niveau", currentLevel, "lancé");
 
     } else {
-        engine.stopRenderLoop();
-        showEndScreen();
-        playThreeTimes("miam", "images/miam.wav");
+
+            engine.stopRenderLoop();
+            showEndScreen();
+
 
     }
 }

@@ -143,6 +143,11 @@ export default class Player {
             console.log("Found fall animation group : ", ag.name);
             this.animationGroups.fall = ag;
           }
+          else if (ag.name === "mange") {
+            console.log("Found mange animation group : ", ag.name);
+            this.animationGroups.mange = ag;
+          }
+
         });
         if (this.animationGroups.idle) {
           this.animationGroups.idle.play(true);
