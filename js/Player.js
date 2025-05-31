@@ -67,7 +67,7 @@ export default class Player {
     this._suppCount = 0;
     this._unsuppCount = 0;
     this._SUPP_THRESHOLD = 3;
-    this._UNSUPP_THRESHOLD = 3;
+    this._UNSUPP_THRESHOLD = 6;
 
     this.inputDirection = new BABYLON.Vector3(0, 0, 0);
     this.forwardLocalSpace = new BABYLON.Vector3(0, 0, 1);
@@ -213,7 +213,7 @@ export default class Player {
     }
 
     if (this.state === "IN_AIR") {
-      if (this.debugFly) {
+      if (this.debugFly || this._unsuppCount < this._UNSUPP_THRESHOLD * 10) {
         if (this.wantJump > 0) {
           this.wantJump--;
           return (this.state = "START_JUMP");

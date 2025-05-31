@@ -33,13 +33,19 @@ export default class MiniGameManager {
       this.playBtn.disabled   = this.playsLeft <= 0;
     }
   
-    showInterface() {
-      this.interface.style.display = "block";
-      this.updatePlaysDisplay();
-      this.img1.src = `images/dice1.png`;
-      this.img2.src = `images/dice6.png`;
-      this.textResult.textContent = '';
-    }
+      showInterface() {
+    // → On active le flex uniquement ici
+    this.interface.style.display = "flex";
+    this.interface.style.flexDirection = "column";
+    this.interface.style.gap = "20px";
+    this.interface.style.alignItems = "stretch";
+
+    // Si vous avez d’autres réglages à faire au moment du lancement, gardez-les en dessous
+    this.updatePlaysDisplay();
+    this.img1.src = `images/dice1.png`;
+    this.img2.src = `images/dice6.png`;
+    this.textResult.textContent = '';
+  }
   
     hideInterface() {
       this.interface.style.display = "none";

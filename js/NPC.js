@@ -184,6 +184,7 @@ this.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
 
     // 2) Vérifie l’état de la quête
     const q = questManager.quests.find(q => q.id === this.id);
+
     if (q && q.status === "pending") {
       // Cas spécial pour la quête 0 (pêche)
       if (this.id === "quest0") {
@@ -230,12 +231,11 @@ this.mesh.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
          return;
        } else {
          showToast("Thank you for bringing back the candies! I hope the sacred carrot is worth it, everyone heard you..", 3000);
+         canvas.requestPointerLock();
          questManager.completeQuest(this.id);
          // Disable interaction on this NPC
-         if (this.interactZone.actionManager) {
-          this.interactZone.actionManager.dispose();
-        }
-        document.getElementById("interactPrompt").style.display = "none";
+
+         
         return;
        }
        

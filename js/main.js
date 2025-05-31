@@ -54,7 +54,7 @@ let CAM_MAX_ZOOMED;
 let camIsZoomed;
 let camTargetRadius;
 
-let currentLevel = 1; // niveau actuel du joueur
+let currentLevel = 3; // niveau actuel du joueur
 const maxLevel = 3;
 let orbsTarget = currentLevel * 5;
 let collectedOrbs = 0;
@@ -349,6 +349,7 @@ document.getElementById("introContinue").addEventListener("click", async () => {
     timerDiv.style.display = "block";
     eurosDiv.style.display = "block";
     const bgMusic = await startGame();
+    window.bgMusic = bgMusic;
     bgMusic.play();
     canvas.requestPointerLock();
 });
@@ -381,6 +382,62 @@ document.getElementById("introContinue").addEventListener("click", async () => {
       previewBox.style.display = "none";
     });
   });
+
+// --- Gestion de l’affichage de l’UI Volume au clavier ---
+window.addEventListener("keydown", (event) => {
+  if (event.code === "KeyV" && !event.repeat) {
+    event.preventDefault();
+    toggleVolumeInterface();
+  }
+});
+/**
+ * Affiche ou masque la fenêtre de réglage du volume.
+ * Quand on l’affiche, on met gamePaused = true et on déverrouille le pointer lock.
+ * Quand on la masque, on remet gamePaused = false et on réactive le ptr lock.
+ */
+function toggleVolumeInterface() {
+  const volDiv = document.getElementById("volumeInterface");
+  if (!volDiv) return;
+
+  if (volDiv.style.display === "none" || volDiv.style.display === "") {
+    // → On l’affiche
+    volDiv.style.display = "block";
+    gamePaused = true;
+
+    // Si la scène est passée en mode disabled parce que gamePaused, on déverrouille le pointer lock
+    if (document.exitPointerLock) {
+      document.exitPointerLock();
+    }
+  } else {
+    // → On la masque
+    volDiv.style.display = "none";
+    gamePaused = false;
+
+    // On recentre la souris sur le canvas pour rétablir le contrôle (pointer lock)
+    canvas.requestPointerLock();
+  }
+}
+
+// --- Mise à jour du volume en temps réel ---
+const slider = document.getElementById("musicVolumeSlider");
+if (slider) {
+  slider.addEventListener("input", (e) => {
+    const value = parseFloat(e.target.value);
+    if (window.bgMusic) {
+      window.bgMusic.setVolume(value);
+    }
+  });
+}
+
+
+
+// --- Bouton Fermer de l’UI Volume ---
+const closeBtn = document.getElementById("closeVolumeBtn");
+if (closeBtn) {
+  closeBtn.addEventListener("click", () => {
+    toggleVolumeInterface();
+  });
+}
 
 
 function createSmokeEffect(pos) {
@@ -558,24 +615,40 @@ async function startGame() {
         }),
         audioManager.load("watersplash", "images/watersplash.wav"),
         audioManager.load("trigger", "images/trigger.mp3", {
-            volume: 0.1
+            volume: 0.03
         }),
         audioManager.load("angry", "images/angry.wav", {
             loop: true,
-            volume: 0.3
+            volume: 0.1
         }),
         audioManager.load("drop", "images/drop.mp3"),
         audioManager.load("explo", "images/explo.wav", {
-            volume: 0.3
+            volume: 0.08
         }),
         audioManager.load("miam", "images/miam.wav", {
             volume: 0.3
         }),
         audioManager.load("charge", "images/charge.wav", {
-            volume: 0.3
+            volume: 0.02
         }),
-
+        audioManager.load("freeze", "images/freeze.wav", {
+            volume: 0.2
+        })
     ]);
+
+    const effectSlider = document.getElementById("effectVolumeSlider");
+if (effectSlider) {
+  // Valeur initiale (1.0 = pas de réduction des effets)
+  effectSlider.value = audioManager.getEffectVolume?.() ?? 1.0;
+
+  effectSlider.addEventListener("input", (e) => {
+    const effVal = parseFloat(e.target.value);
+    // On appelle la méthode du AudioManager pour appliquer effVal
+    if (audioManager) {
+      audioManager.setEffectVolume(effVal);
+    }
+  });
+}
 
     if (player) {
         player.am = audioManager;
@@ -923,13 +996,12 @@ async function startGame() {
                         showToast("You filled the jar! Quest complete.", 3000);
                         questManager.completeQuest("quest3");
                         const npc1 = npcMeshes.find(npc => npc.id === "quest3");
-                        if (npc1 && npc1.mesh.actionManager) {
-                            npc1.mesh.actionManager.dispose();
-                            // on cache aussi l'invite
-                            promptDiv.style.display = "none";
+                        console.log("Quest 3 completed, disabling interaction, this.interactZone.actionManager :", npc1.interactZone.actionManager);
+                        if (npc1.interactZone.actionManager) {
+                        npc1.interactZone.actionManager.dispose();
                         }
-                        // (optionnel) on peut aussi mettre un flag pour supprimer le prompt ou le mesh :
-                        // scene.repairStation = null;
+                        document.getElementById("interactPrompt").style.display = "none";
+                        console.log("Quest 3 completed, interaction disabled, npc1.interactZone.actionManager :", npc1.interactZone.actionManager);
                     }
                 }
             }
@@ -2384,6 +2456,16 @@ function updateQuest1AttemptsDisplay() {
 
 function clearLevelObjects() {
 
+    for (const zoneData of funZones) {
+            const {
+                mesh,
+                animation
+            } = zoneData;
+        mesh.dispose();
+    }
+    funZones.length = 0;
+
+
     clearMovingPlatforms(scene);
 
     enemiesManager.enemies.forEach(enemy => {
@@ -2770,6 +2852,7 @@ function triggerFreeze() {
 
     update_skillicon("iconFreeze", "images/gel_cd.png");
     showToast("Freeze activated ! 5 s");
+    audioManager.play("freeze");
 
     enemiesManager.enemies.forEach(e => e.freeze(5000));
     moutonsManager.moutons.forEach(m => m.freeze(5000));
@@ -3105,6 +3188,11 @@ function nextLevel() {
 
         invulnerable = true;
         setTimeout(() => invulnerable = false, 1000);
+
+
+        if (insuranceBought) {
+            insuranceUsed = false;
+        }
 
         miniGameManager.resetPlays();
 
