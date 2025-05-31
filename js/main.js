@@ -55,7 +55,7 @@ let CAM_MAX_ZOOMED;
 let camIsZoomed;
 let camTargetRadius;
 
-let currentLevel = 1; // niveau actuel du joueur
+let currentLevel = 3; // niveau actuel du joueur
 const maxLevel = 3;
 let orbsTarget = currentLevel * 5;
 let collectedOrbs = 0;
@@ -2125,7 +2125,7 @@ function createGround(scene, level) {
                     position: new BABYLON.Vector3(-44.9, 7.7, 54.4),
                     questId: "quest2",
                     dialogue: ["Hello adventurer", "You're looking to take a bite of the sacred carrot?", "I can help you, but I need your cooperation.", "I lost the key to my house at the bottom of the cave..", "If you bring it back to me, I could open one of the locks on the portal for you.", "But be careful, the cave is dangerous, you'll need courage and determination to get through it."],
-                    title: "Retrieve Mr. Zou's key"
+                    title: "Retrieve Adventurer's key"
                 },
                 {
                     position: new BABYLON.Vector3(33.6, 2, -75.6),
