@@ -54,7 +54,7 @@ let CAM_MAX_ZOOMED;
 let camIsZoomed;
 let camTargetRadius;
 
-let currentLevel = 3; // niveau actuel du joueur
+let currentLevel = 1; // niveau actuel du joueur
 const maxLevel = 3;
 let orbsTarget = currentLevel * 5;
 let collectedOrbs = 0;
@@ -735,7 +735,7 @@ if (effectSlider) {
                 mesh,
                 animation
             } = zoneData;
-            const d = BABYLON.Vector3.Distance(scene.player.mesh.position, mesh.position);
+            const d = BABYLON.Vector3.Distance(player.mesh.position, mesh.position);
             if (d < 4.5) {
                 nearInteract = true;
                 promptDiv.textContent = "press E";
@@ -1907,7 +1907,8 @@ function createGround(scene, level) {
 
 
 
-            createFunZone(25.7, 4.8, -107.3, scene.player.animationGroups.jump);
+            console.log("funzone : ", player.animationGroups.jump);
+            createFunZone(25.7, 4.8, -107.3, player.animationGroups.jump);
 
             const pos1 = new BABYLON.Vector3(5.5, 58.6, -135.4);
             const pos2 = new BABYLON.Vector3(58.3, 58.6, -141.3);
@@ -1988,8 +1989,8 @@ function createGround(scene, level) {
             createMovingPlatform(scene, p4_from, p4_to, 0.5);
 
 
-            createFunZone(-38.3, 1.4, -24.16, scene.player.animationGroups.boule);
-            console.log("ICIIIIIIIIIIIIIIIIIIII  : ", player.animationGroups.boule);
+            createFunZone(-38.3, 1.4, -24.16,  player.animationGroups.jump);
+            console.log("ICIIIIIIIIIIIIIIIIIIII  : ", player.animationGroups.jump);
 
             createFinalPoint(144, 0.5, -2.8);
             createFinishPoint(-70.2, -3.4, 15.3);
@@ -2347,7 +2348,7 @@ function createFunZone(x, y, z, animationGroup) {
         funZones.push({
             mesh: m0,
             get animation() {
-                return player.animationGroups.boule;
+                return animationGroup;
             }
         });
     });
