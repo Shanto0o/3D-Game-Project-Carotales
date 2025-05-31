@@ -58,7 +58,7 @@ export default class FishingManager {
     this.lastTs      = performance.now();
 
     this.handle.style.bottom      = "0%";
-    this.timerEl.textContent      = `Red Zone Timer : ${this.targetTime} s remaining`;
+    this.timerEl.textContent      = `Orange Zone Timer : ${this.targetTime} s remaining`;
 
     this.interface.style.display  = "flex";
     window.addEventListener("keydown", this._onKeyDown);
@@ -91,14 +91,17 @@ export default class FishingManager {
 
     // Mise à jour du timer affiché
     const remaining = Math.max(0, Math.ceil(this.targetTime - this.insideTime));
-    this.timerEl.textContent = `Red Zone Timer : ${remaining} s remaining`;
+    this.timerEl.textContent = `Orange Zone Timer : ${remaining} s remaining`;
 
     // Calculs de positions pour savoir si on est dans la zone rouge
     const barRect    = this.bar.getBoundingClientRect();
     const redRect    = this.redZone.getBoundingClientRect();
+    const handleRect = this.handle.getBoundingClientRect();
     const handleY    = barRect.bottom - this.pos * barRect.height;
+    const handleCenterY = handleRect.top + handleRect.height / 2;
+    const inRedZone = (handleCenterY >= redRect.top && handleCenterY <= redRect.bottom);
 
-    if (handleY >= redRect.top && handleY <= redRect.bottom) {
+    if (inRedZone) {
       this.insideTime += dt;
 
       if (this.insideTime >= this.targetTime) {

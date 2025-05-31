@@ -54,7 +54,7 @@ let CAM_MAX_ZOOMED;
 let camIsZoomed;
 let camTargetRadius;
 
-let currentLevel = 1; // niveau actuel du joueur
+let currentLevel = 3; // niveau actuel du joueur
 const maxLevel = 3;
 let orbsTarget = currentLevel * 5;
 let collectedOrbs = 0;
@@ -1476,7 +1476,7 @@ function createScene() {
   const vel = player.controller.getVelocity();
   const vy = vel.y; // composante verticale
 
-  if (player.state === "IN_AIR" && player._unsuppCount >= player._UNSUPP_THRESHOLD * 3) {
+  if (player.state === "IN_AIR" && player._unsuppCount >= player._UNSUPP_THRESHOLD * 30) {
     if (vy < 0) {
       // le joueur descend : jouer "fall"
       player._switchAnimation(player.animationGroups.fall, true);

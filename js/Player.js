@@ -137,7 +137,7 @@ export default class Player {
           else if (ag.name === "boule") {
             console.log("Found boule animation group : ", ag.name);
             this.animationGroups.boule = ag;
-          } else if (ag.name === "VraiFall") {
+          } else if (ag.name === "Fall3") {
             console.log("Found fall animation group : ", ag.name);
             this.animationGroups.fall = ag;
           }
