@@ -111,7 +111,7 @@ export default class MiniGameManager {
   
       this.textResult.innerHTML =
         `Results: ${d1} + ${d2} = ${sum}<br>` +
-        `You ${gain > 0 ? "won" : "lose"} ${gain} €`;
+        `You ${gain > 0 ? "won" : "lose"} ${gain} carrots!`;
   
       this.playBtn.disabled = this.playsLeft <= 0;
     }

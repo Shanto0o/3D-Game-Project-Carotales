@@ -267,6 +267,8 @@ export default class Player {
     }
   }
 
+  
+
   getDesiredVelocity(deltaTime, supportInfo, currentVelocity) {
     let nextState = this.getNextState(supportInfo);
     if (nextState != this.state) {

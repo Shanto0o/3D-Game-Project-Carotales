@@ -31,6 +31,7 @@ let npcMeshes = [];
 let inspecting = false;
 let finishMeshes = [];
 const allAggregates = [];
+let controlsLocked = false;
 
 
 globalThis.HK = await HavokPhysics();
@@ -54,7 +55,7 @@ let CAM_MAX_ZOOMED;
 let camIsZoomed;
 let camTargetRadius;
 
-let currentLevel = 1; // niveau actuel du joueur
+let currentLevel = 3; // niveau actuel du joueur
 const maxLevel = 3;
 let orbsTarget = currentLevel * 5;
 let collectedOrbs = 0;
@@ -1462,7 +1463,9 @@ function createScene() {
             return;
         }
 
-        player.move(inputStates, camera);
+        if (!controlsLocked) {
+            player.move(inputStates, camera);
+        }
 
         let down = new BABYLON.Vector3(0, -1, 0);
         let support = player.controller.checkSupport(dt, down);
@@ -1986,12 +1989,12 @@ function createGround(scene, level) {
 
             // ——— Zones start / end invisibles ———
             quest1StartZone = BABYLON.MeshBuilder.CreateBox("q1Start", {
-                size: 5
+                size: 12
             }, scene);
             quest1StartZone.position.set(-83.5, 4, -69.3);
             quest1StartZone.isVisible = false;
             quest1EndZone = quest1StartZone.clone("q1End");
-            quest1EndZone.position.set(-121.6, 31.5, 2.5);
+            quest1EndZone.position.set(-194.9, 32, -2.3);
             quest1EndZone.isVisible = false;
 
             // ——— Crée le timer ET l’affichage des tentatives ———
@@ -2162,6 +2165,14 @@ function createGround(scene, level) {
                         camera.detachControl(canvas); // libère la souris de la 3rd-person
                         scene.activeCamera = lockCamera;
                         audioManager.play("lock");
+                        controlsLocked = true;  
+                        inputStates.up = false;
+                        inputStates.down = false;
+                        inputStates.left = false;
+                        inputStates.right = false;
+                        inputStates.jump = 0;
+                        inputStates.interact = false;
+                        player.wantJump = 0;
 
                         // 3) Effet fumigène, disparition, puis retour
                         createSmokeEffect(lockPos);
@@ -2174,6 +2185,7 @@ function createGround(scene, level) {
                             camera.attachControl(canvas, true);
                             lockCamera.dispose();
                             lockCamera = null;
+                            controlsLocked = false; 
                         }, 1600); // 0.8s fumée + 0.7s pause = 1.5s total
                     }
 
