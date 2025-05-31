@@ -240,42 +240,44 @@
   box-shadow: 0 0 5px rgba(255, 165, 0, 0.6);
 }
 
-    #introInterface {
-    display: none;
-    position: absolute;
-    inset: 0;
-    background: rgba(10, 10, 30, 0.8);
-    backdrop-filter: blur(5px);
-    z-index: 1000;
-
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    }
-
     #introInterface .card {
-      max-width: 500px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      padding: 30px 25px;
-      text-align: center;
-      color: #fff;
-      font-family: 'MyGameFont', sans-serif;
-      animation: fadeIn 0.6s ease-out;
-    }
+  width: 90%;            /* occuper 90 % de la largeur disponible */
+  max-width: 500px;      /* mais ne jamais dépasser 500px sur grand écran */
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 20px 15px;    /* réduire légèrement le padding */
+  text-align: center;
+  color: #fff;
+  font-family: 'MyGameFont', sans-serif;
+  animation: fadeIn 0.6s ease-out;
+  box-sizing: border-box; /* inclure le padding dans la largeur */
+}
 
-    #introInterface .card h2 {
-      margin-bottom: 15px;
-      font-size: 2rem;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.5);
-    }
+/* 2) Titre et paragraphe plus petits sur petits écrans */
+#introInterface .card h2 {
+  margin-bottom: 15px;
+  font-size: 1.5rem;     /* ex. 1.5 × 16px = 24px */
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+#introInterface .card p {
+  line-height: 1.4;
+  margin-bottom: 20px;
+  font-size: 1rem;       /* ex. 1 × 16px = 16px */
+}
 
-    #introInterface .card p {
-      line-height: 1.5;
-      margin-bottom: 25px;
-      font-size: 1.1rem;
-    }
+/* 3) Si vous voulez encore plus de réactivité, on ajoute une media query */
+@media (max-width: 600px) {
+  #introInterface .card {
+    padding: 15px 10px;  /* on compresse encore */
+  }
+  #introInterface .card h2 {
+    font-size: 1.2rem;   /* encore plus petit */
+  }
+  #introInterface .card p {
+    font-size: 0.9rem;
+  }
+}
 
     #introInterface .btn-continue {
       background: linear-gradient(135deg, #ff9de2 0%, #fad0c4 100%);
