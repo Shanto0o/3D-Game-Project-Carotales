@@ -1113,7 +1113,7 @@ if (effectSlider) {
             }, {
                 loop: true,
                 autoplay: false,
-                volume: 0.01,
+                volume: 0.05,
                 streaming: true,
                 spatialSound: false
             }
