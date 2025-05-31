@@ -66,8 +66,8 @@ export default class Player {
     // after this.state = "ON_GROUND";
     this._suppCount = 0;
     this._unsuppCount = 0;
-    this._SUPP_THRESHOLD = 3;
-    this._UNSUPP_THRESHOLD = 6;
+    this._SUPP_THRESHOLD = 1;
+    this._UNSUPP_THRESHOLD = 4;
 
     this.inputDirection = new BABYLON.Vector3(0, 0, 0);
     this.forwardLocalSpace = new BABYLON.Vector3(0, 0, 1);
