@@ -116,6 +116,7 @@ export default class Player {
         
 
         animationGroups.forEach((ag) => {
+          console.log("→<'"+ ag.name + "'> (longueur =", ag.name.length, ")");
           console.log("Animation group:", ag.name);
           if (ag.name === "walktest") {
             console.log("Found walk animation group : ", ag.name);
@@ -134,9 +135,9 @@ export default class Player {
             console.log("Found coup animation group : ", ag.name);
             this.animationGroups.coup = ag;
           }
-          else if (ag.name === "boule") {
-            console.log("Found boule animation group : ", ag.name);
-            this.animationGroups.boule = ag;
+          else if (ag.name === "coucou") {
+            console.log("Found coucou animation group : ", ag.name);
+            this.animationGroups.coucou = ag;
           } else if (ag.name === "Fall3") {
             console.log("Found fall animation group : ", ag.name);
             this.animationGroups.fall = ag;

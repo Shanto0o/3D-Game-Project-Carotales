@@ -1907,8 +1907,8 @@ function createGround(scene, level) {
 
 
 
-            console.log("funzone : ", player.animationGroups.jump);
-            createFunZone(25.7, 4.8, -107.3, player.animationGroups.jump);
+            console.log("funzone : ", player.animationGroups.coucou);
+            createFunZone(25.7, 4.8, -107.3, player.animationGroups.coucou);
 
             const pos1 = new BABYLON.Vector3(5.5, 58.6, -135.4);
             const pos2 = new BABYLON.Vector3(58.3, 58.6, -141.3);
@@ -1989,8 +1989,8 @@ function createGround(scene, level) {
             createMovingPlatform(scene, p4_from, p4_to, 0.5);
 
 
-            createFunZone(-38.3, 1.4, -24.16,  player.animationGroups.jump);
-            console.log("ICIIIIIIIIIIIIIIIIIIII  : ", player.animationGroups.jump);
+            createFunZone(-38.3, 1.4, -24.16,  player.animationGroups.coucou);
+            console.log("ICIIIIIIIIIIIIIIIIIIII  : ", player.animationGroups.coucou);
 
             createFinalPoint(144, 0.5, -2.8);
             createFinishPoint(-70.2, -3.4, 15.3);
