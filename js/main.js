@@ -39,7 +39,7 @@ globalThis.HK = await HavokPhysics();
 let shadowGen;
 let cheat = false;
 
-let timerDuration = 200;
+let timerDuration = 300;
 let timeLeft;
 let timerInterval;
 let gamePaused = false;
@@ -3256,7 +3256,7 @@ function nextLevel() {
             engine.stopRenderLoop();
         
             showEndScreen();
-        gamePaused = true;
+        clearInterval(timerInterval);
 
 
     }
