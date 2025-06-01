@@ -1,48 +1,49 @@
-# Carotales
+![Logo](images/carrotales.png)
+
 Jeu hébergé sur : https://shanto0o.github.io/3D-Game-Project-Carotales/
 
-Video présentation du gameplay : https://www.youtube.com/watch?v=PiP7ZgeqVu0
-  ## Groupe
-  - **Nom** : Florent Belot, Alexis Dubarry, Shanti Noel
+GitHub du projet : https://github.com/Shanto0o/3D-Game-Project-Carotales
 
-# README pour le rendu du 22/04 du cours de 3D game programming : 
+Trailer : https://www.youtube.com/watch?v=VD92IOL5OIw
 
+## Groupe
+- **Florent Belot**
+- **Shanti Noel**
+- **Alexis Dubarry**
 
-Jeu : Le jeu est un platformer où l'on incarne un lapin qui a pour but de récupérer des carottes en parcourant des niveaux.
+## Description
+Carotales est un jeu de plateforme 3D dans lequel vous incarnez un lapin aventurier ; collectez un maximum de carottes, franchissez les niveaux dans le temps imparti et, enfin, accédez à la Carotte Sacrée.
 
-L'objectif principal est de passer au niveau suivant dans le temps imparti tout en amassant un maximum de carottes dans l'objectif d'atteindre la carotte sacrée.
-  ## Les niveaux : 
-  - Dans le premier niveau on est sur une seule île flottante avec une montagne. La fin se situe en haut de la montagne, vous pourrez l'atteindre via 2 chemin, l'un plutôt facile et l'autre plus difficile (mais avec plus de carottes disponible).
-  - Dans le deuxième niveau il n'y a plus de mini-jeux mais des ennemis (abeilles) font leur apparition, l'objectif reste le même que pour le premier niveau.
-  - (PAS ENCORE IMPLÉMENTÉ) Dans le 3ème niveau nous touchons au but et nous voyons la carotte mais le chemin pour l'atteindre est bloqué par un portail avec 4 cadenas. L'objectif est de déverouiller ces 4 cadenas pour accéder à la carottes et mettre fin au jeu.
+## Niveaux
+1. **Niveau 1** : île flottante avec une montagne. Deux chemins (facile / difficile) et deux mini-jeux : pêche et dés.
+2. **Niveau 2** : apparition des ennemis (abeilles). Objectif : collecter des carottes et atteindre la fin avant la montre.
+3. **Niveau 3** : la Carotte Sacrée est derrière un portail protégé par **4 cadenas**. Pour les ouvrir, 4 quêtes :
+   - **Quête de pêche** : repêcher l’objet perdu du PNJ dans l’étang.
+   - **Parcours chronométré** : finir un parcours en moins de 90 s.
+   - **Récupération de clé** : explorer une grotte et rapporter la clé au PNJ.
+   - **Combat de boss** : affronter une pinata, subir son explosion, ramasser les bonbons et les déposer pour terminer la quête.
+   Une fois les 4 cadenas déverrouillés, le portail disparaît et vous accédez à la Carotte Sacrée.
 
-  ## Fonctionnalité :
-  - Dans le premier niveau, nous pouvons effectuer 2 mini-jeux, l'un représente de la pêche dans un étang où l'on va pêcher des poissons-carottes (avec une chance d'en avoir un qui vaut vraiment beaucoup de carottes) et l'autre en haut de la montagne permet de jouer aux dés avec une chance de remporter le gros lot.
-  - Utilisation du moteur physique Havok.
-  - Systeme de mouvement de caméra pendant qu'on peche.
-  - Entre les niveaux une boutique apparait et permet d'acheter des améliorations ce qui donne de l'interêt au ramassage de carottes. ( Il y a 2 améliorations actives (competences :  freeze, speedboost)) et le reste sont des passifs pour améliorer l'experience de jeu)
-  - Ajout de particules pour les 2 compétences actives du jeu.
-  - Animations.
-  - Ajout de différents sound effects pour rendre le jeu plus vivant.
-  - Les ennemis peuvent nous suivre, sinon ils ont un chemin prédéfini.
-
-  
-  ## Commandes
-  - "z" : Aller en avant.
-  - "q" : Aller à gauche.
-  - "s" : Aller en arrière.
-  - "d" : Aller à droite.
-  - Espace : Sauter.
-  - "e" : Intéragir avec les mini-jeux.
-  - "a" : Utiliser l'amélioration pour freeze les ennemis.
-  - "r" : Speedboost.
-
-  ## Répartition du travail :
-  - Bélot Florent : Modélisation du terrain et implémentation de Havok.
-  - Noel Shanti : Lapin avec les animations et le mini jeu de pêche.
-  - Dubarry Alexis : Le code principale.
-
-  Mais on travaillait ensemble tout le temps, donc on s'est tous entraidé et on a un peu touché à tout.
+## Fonctionnalités principales
+- **Moteur physique Havok** avec particules et animations.
+- **Ombres en temps réel** et collision caméra empêchant la traversée des murs.
+- **Synchronisation** du personnage avec les plateformes mouvantes.
+- **Boutique entre les niveaux** : compétences actives (freeze, speedboost) et améliorations passives.
+- **Mini-jeux** : pêche, dés.
+- **Système de quêtes** avec gestion du journal de quêtes (touche P).
+- **Boss final** avec système de loot (bonbons).
 
 
+## Modèles et animations 
+- **Fait main!** : Nous avons réalisés nous-même presque tous les modèles de notre jeu (lapin, accessoires, mouton, Map de tous les niveaux), et toutes les animations ! 
 
+## Personnalisation
+Avant de démarrer la partie, vous pouvez personnaliser l’apparence de votre lapin en lui attribuant divers accessoires.
+
+- **Bouton Personnaliser** : dans le menu principal, cliquez sur « Customize » pour ouvrir le panneau de personnalisation.
+- **Sélection** : cochez la case de l’accessoire souhaité dans chaque catégorie.
+- **Appliquer / Fermer** : cliquez sur « Appliquer » pour enregistrer vos choix, ou « Fermer » pour annuler.
+
+## Commandes
+- (jouable en qwerty)
+![Logo](commands.png)
