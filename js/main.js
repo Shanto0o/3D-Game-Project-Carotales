@@ -3254,7 +3254,9 @@ function nextLevel() {
     } else {
 
             engine.stopRenderLoop();
+        
             showEndScreen();
+        gamePaused = true;
 
 
     }
