@@ -895,7 +895,7 @@ if (effectSlider) {
 
             // — SI LE BOSS MEURT —
             if (scene.bossHealth <= 0) {
-                showToast("You managed to break the piñata! Collect the candies", 3000);
+                showToast("You managed to break the piñata! Colect the candies and put them in the pot", 5000);
                 scene.bossMesh.dispose();
                 scene.bossMesh = null;
 
@@ -2125,14 +2125,14 @@ function createGround(scene, level) {
                 {
                     position: new BABYLON.Vector3(-44.9, 7.7, 54.4),
                     questId: "quest2",
-                    dialogue: ["Hello adventurer", "You're looking to take a bite of the sacred carrot?", "I can help you, but I need your cooperation.", "I lost the key to my house at the bottom of the cave..", "If you bring it back to me, I could open one of the locks on the portal for you.", "But be careful, the cave is dangerous, you'll need courage and determination to get through it."],
+                    dialogue: ["Hello adventurer", "You're looking to take a bite of the sacred carrot?", "I can help you, but I need your cooperation.", "I lost my house's keys at the bottom of the cave..", "If you bring it back to me, I could open one of the locks on the portal for you.", "But be careful, the cave is dangerous, you'll need courage and determination to get through it."],
                     title: "Retrieve Adventurer's key"
                 },
                 {
                     position: new BABYLON.Vector3(33.6, 2, -75.6),
                     questId: "quest3",
                     dialogue: ["Hey !", "Are you trying to open this lock? I think I can help you. See the big piñata behind me?", "If you break it fast enough, no one will notice you and you can bring me back my 3 favorite candies.","Be careful, the piñata don't like to be touched..", "In exchange, I'll open one of the locks for you. You'll drop them in the candy bucket right here.", " Win-win ! "],
-                    title: "Break the piñata and collect the candies"
+                    title: "Break the piñata, collect the candies and put them in the pot"
                 },
             ];
             npcData.forEach(data => {
