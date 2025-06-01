@@ -46,4 +46,4 @@ Avant de démarrer la partie, vous pouvez personnaliser l’apparence de votre l
 
 ## Commandes
 - (jouable en qwerty)
-![Logo](commands.png)
+![Logo](images/commands.png)
