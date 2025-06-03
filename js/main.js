@@ -323,7 +323,8 @@ closeCustomizeBtn.addEventListener("click", () => {
 });
 
 
-const optionBtn = document.getElementById("optionBtn"); // ton image options :contentReference[oaicite:1]{index=1}
+const optionBtn = document.getElementById("optionBtn"); //
+
 const optionsPanel = document.getElementById("optionsPanel");
 const closeOptions = document.getElementById("closeOptionsBtn");
 const cheatCheckbox = document.getElementById("cheatCheckbox");
@@ -681,7 +682,7 @@ if (effectSlider) {
     modifySettings();
     camera = createThirdPersonCamera(scene, player.mesh);
 
-    CAM_MAX_NORMAL = camera.radius; // ta distance « normale »
+    CAM_MAX_NORMAL = camera.radius; // la distance « normale »
     CAM_MAX_ZOOMED = camera.radius * 0.4; // la distance « zoomée »
     camIsZoomed = false; // toggle state
     camTargetRadius = CAM_MAX_NORMAL; // cible vers laquelle on interpolera
@@ -1139,7 +1140,6 @@ function createMovingPlatform(scene, p_from, p_to, speed = 2) {
         platform.name = "movingPlatform";
         platform.receiveShadows = true;
         platform.position.copyFrom(p_from);
-        // assurez-vous que la plateforme a une rotationQuaternion
         if (!platform.rotationQuaternion) {
             platform.rotationQuaternion = BABYLON.Quaternion.Identity();
         }
@@ -1167,7 +1167,7 @@ function createMovingPlatform(scene, p_from, p_to, speed = 2) {
             const alpha = (Math.sin(t * speed) + 1) * 0.5;
             const newPos = BABYLON.Vector3.Lerp(p_from, p_to, alpha);
 
-            // ➤ Utilisez setTargetTransform pour que Havok calcule la vélocité
+            // setTargetTransform pour que Havok calcule la vélocité
             //     et applique la friction au contact des autres bodies
             body.setTargetTransform(
                 newPos,
@@ -1177,12 +1177,10 @@ function createMovingPlatform(scene, p_from, p_to, speed = 2) {
             // synchronisation visuelle
             platform.position.copyFrom(newPos);
 
-            // (optionnel) calcul manuel si vous voulez un fallback dans Player
             platform.userVelocity = newPos.subtract(prevPos).scale(1 / dt);
             prevPos.copyFrom(newPos);
         });
 
-        // 4) stockez si besoin pour cleanup ultérieur
         movingPlatforms.push({
             platform,
             handle
@@ -1225,12 +1223,11 @@ function createChest(x, y, z, chestId) {
 }
 
 function createRepairStation(x, y, z) {
-    // Charger la station où on placera les pièces
     repairStationMesh = BABYLON.SceneLoader.ImportMesh(
         "", "images/", "potbonbon.glb", scene,
         meshes => {
             scene.repairStation = meshes[0];
-            scene.repairStation.position.set(x, y - 1, z); // ajustez au niveau
+            scene.repairStation.position.set(x, y - 1, z); // ajuste au niveau
             scene.repairStation.receiveShadows = true;
             scene.repairStation.checkCollisions = false;
             meshes.forEach(m => {
@@ -1540,7 +1537,7 @@ function createFinishPoint(x, y, z) {
             );
             allAggregates.push(pondaggreg);
 
-            // Rotation (tu peux la laisser après, elle n’affecte pas la taille)
+            // Rotation 
             finishModel.rotationQuaternion = BABYLON.Quaternion.RotationAxis(
                 BABYLON.Axis.Y,
                 -Math.PI / 2
@@ -1954,8 +1951,7 @@ function createGround(scene, level) {
             BABYLON.SceneLoader.ImportMesh("", "images/", "niveau3HERBE.glb", scene, function(grassMeshes) {
                 importedMeshes = importedMeshes.concat(grassMeshes);
             });
-            // 3e niveau temporaire : une grande plateforme plate
-            // on vide d'abord les anciens meshes
+
             importedMeshes = meshes;
 
             meshes.forEach((mesh) => {
@@ -2080,7 +2076,6 @@ function createGround(scene, level) {
                 }
             });
 
-            // (Optionnel) quelques orbes disséminées pour tester la récolte
             const spawnPositions = [
                 new BABYLON.Vector3(110.3, -1.6, 0.5),
                 new BABYLON.Vector3(45.7, 1.9, -76.1),
@@ -2155,7 +2150,6 @@ function createGround(scene, level) {
                             // 2) Calcule la matrice de rotation autour de Y
                             const rotY = BABYLON.Matrix.RotationY(angle);
 
-                            // 3) Applique-la à ton offset initial
                             const initialOffset = new BABYLON.Vector3(0, 5, -10);
                             const rotatedOffset = BABYLON.Vector3.TransformCoordinates(initialOffset, rotY);
                             lockCamera = new BABYLON.FreeCamera(
@@ -2207,7 +2201,7 @@ function createGround(scene, level) {
                 "",
                 "images/",
                 "pinata.glb",
-                scene, // <-- utilisez ici `scene`, pas `this.scene`
+                scene, 
                 (meshes) => {
                     // 1) Récupère le root
                     const root = meshes[0];
@@ -3178,7 +3172,7 @@ function showEndScreen() {
     };
 }
 async function playThreeTimes(key, url = null) {
-    // 1) Assurez-vous que le son est chargé
+
     if (!audioManager.sounds.has(key)) {
         if (!url) {
             console.warn(`AudioManager: son "${key}" inconnu et pas d'URL fournie`);
